@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Modulo, ModuloInput } from '@/lib/types/modulo';
 import { crearModulo, actualizarModulo } from './actions';
 
-
 type Props = {
   moduloEditar?: any;
   onSuccess?: () => void;
@@ -23,26 +22,32 @@ export default function FormularioModulo({ moduloEditar, onSuccess, onCancel }: 
     es_gratuito: false,
   });
 
+  // Si se selecciona un módulo para editar, abre el formulario y carga sus datos
   useEffect(() => {
     if (moduloEditar) {
+      setIsOpen(true);
       setFormData({
-        titulo_modulo: moduloEditar.titulo_modulo,
+        titulo_modulo: moduloEditar.titulo_modulo || '',
         descripcion_modulo: moduloEditar.descripcion_modulo || '',
-        posicion_modulo: moduloEditar.posicion_modulo,
-        esta_publicado: moduloEditar.esta_publicado,
-        es_gratuito: moduloEditar.es_gratuito,
+        posicion_modulo: moduloEditar.posicion_modulo || 1,
+        esta_publicado: moduloEditar.esta_publicado || false,
+        es_gratuito: moduloEditar.es_gratuito || false,
       });
     }
   }, [moduloEditar]);
 
+  // Cierra la ventana y notifica al componente padre
   const handleCancel = () => {
     setIsOpen(false);
+    setError('');
     onCancel?.();
   };
 
+  // Botón inicial de apertura cuando la ventana está cerrada
   if (!isOpen && !moduloEditar) {
     return (
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
         className="px-4 py-2.5 bg-[#006689] hover:bg-[#002547] text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-2 shadow-sm"
       >
@@ -51,7 +56,6 @@ export default function FormularioModulo({ moduloEditar, onSuccess, onCancel }: 
       </button>
     );
   }
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +72,7 @@ export default function FormularioModulo({ moduloEditar, onSuccess, onCancel }: 
     setCargando(false);
 
     if (res.success) {
+      setIsOpen(false); // Oculta el formulario tras guardar correctamente
       onSuccess?.();
     } else {
       setError(res.message);
@@ -76,9 +81,19 @@ export default function FormularioModulo({ moduloEditar, onSuccess, onCancel }: 
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-[0px_4px_20px_rgba(13,59,102,0.05)] border border-[#E6F2FB]">
-      <h2 className="text-xl font-bold text-[#002547] pb-3 border-b border-[#E6F2FB] mb-5">
-        {moduloEditar ? 'Editar Módulo' : 'Nuevo Módulo Formativo'}
-      </h2>
+      <div className="flex justify-between items-center pb-3 border-b border-[#E6F2FB] mb-5">
+        <h2 className="text-xl font-bold text-[#002547]">
+          {moduloEditar ? 'Editar Módulo' : 'Nuevo Módulo Formativo'}
+        </h2>
+        <button
+          type="button"
+          onClick={handleCancel}
+          className="text-[#737780] hover:text-[#002547]"
+          title="Cerrar"
+        >
+          <span className="material-symbols-outlined">close</span>
+        </button>
+      </div>
 
       {error && (
         <div className="p-3 mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-semibold">
@@ -151,7 +166,7 @@ export default function FormularioModulo({ moduloEditar, onSuccess, onCancel }: 
               className="w-4 h-4 accent-[#002547] rounded cursor-pointer"
             />
             <label htmlFor="esta_publicado" className="text-xs font-bold text-[#002547] cursor-pointer">
-              Publicar Inmediatamente
+              Publicado
             </label>
           </div>
         </div>
@@ -159,7 +174,7 @@ export default function FormularioModulo({ moduloEditar, onSuccess, onCancel }: 
         <div className="flex justify-end gap-3 pt-5 border-t border-[#E6F2FB]">
           <button
             type="button"
-            onClick={onCancel}
+            onClick={handleCancel}
             className="px-4 py-2 text-xs font-bold text-[#42474f] bg-white border border-[#c3c6d0] rounded-lg hover:bg-gray-50 transition-colors"
           >
             Cancelar
