@@ -1,8 +1,7 @@
 @import "tailwindcss";
 
-
-
 :root {
+  --font-sans: var(--font-manrope), sans-serif;
   --brand-navy: #0d3b66;
   --brand-blue: #2566a8;
   --brand-cyan: #38bdf5;
@@ -29,7 +28,7 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-manrope), sans-serif;
 }
 
 .hero {

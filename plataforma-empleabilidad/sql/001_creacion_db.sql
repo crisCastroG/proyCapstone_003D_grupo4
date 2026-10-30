@@ -191,7 +191,7 @@ titulo_modulo VARCHAR(200) NOT NULL,
 descripcion_modulo TEXT,
 posicion_modulo INTEGER NOT NULL,
 esta_publicado BOOLEAN NOT NULL DEFAULT FALSE,
-es_gratuito BOOLEAN NOT NULL DEFAULT FALSE, -- Identifica si el módulo es gratuito o de pago
+es_gratuito BOOLEAN NOT NULL DEFAULT FALSE, 
 fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
 CONSTRAINT modulo_posicion_ck

@@ -1,5 +1,6 @@
-import DashboardWorkspace from "../../components/DashboardWorkspace";
+// app/admin/page.tsx
+import { redirect } from 'next/navigation';
 
 export default function AdminPage() {
-	return <DashboardWorkspace mode="admin" />;
+  redirect('/admin/modulos');
 }
