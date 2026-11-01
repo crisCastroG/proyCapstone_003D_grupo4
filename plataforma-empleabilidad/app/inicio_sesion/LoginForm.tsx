@@ -116,13 +116,12 @@ export default function LoginForm() {
             </div>
 
             <div style={{ textAlign: 'right' }}>
-              <button
-                type="button"
-                onClick={() => setModoRecuperar(true)}
-                style={{ background: 'none', border: 'none', color: '#2566A8', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}
-              >
-                ¿Olvidaste tu contraseña?
-              </button>
+             <Link
+               href="/recuperar_password"
+               style={{ color: '#2566A8', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}   
+            > 
+               ¿Olvidaste tu contraseña?
+             </Link>
             </div>
 
             <button
