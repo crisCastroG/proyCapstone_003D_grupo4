@@ -10,9 +10,9 @@ export async function middleware(request: NextRequest) {
 
   // nProtege rutas que requieren sesión activa 
   const esRutaProtegida =
-    pathname.startsWith('/dashboard') ||
-    pathname.startsWith('/contenidos') ||
-    pathname.startsWith('/admin');
+  pathname.startsWith('/modulos') ||
+  pathname.startsWith('/contenidos') ||
+  pathname.startsWith('/admin');
 
   if (esRutaProtegida && !sesion) {
     const loginUrl = new URL('/inicio_sesion', request.url);
@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
         );
       }
       // Si es en navegador, redirige a su área de notificando el 403
-      const urlCliente = new URL('/dashboard?error=403', request.url);
+      const urlCliente = new URL('/modulos?error=403', request.url);
       return NextResponse.redirect(urlCliente);
     }
   }
@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
     const destino =
       sesion.rol === 'administrador' || sesion.rol === 'superadministrador'
         ? '/admin'
-        : '/dashboard';
+        : '/modulos';
     return NextResponse.redirect(new URL(destino, request.url));
   }
 
@@ -49,7 +49,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
+    '/modulos/:path*',
     '/contenidos/:path*',
     '/admin/:path*',
     '/api/admin/:path*',

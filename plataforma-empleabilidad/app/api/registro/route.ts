@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       password,
     } = body;
 
-    // 1. Validar campos obligatorios
+    // Validar campos obligatorios
     if (
       !nombre ||
       !apellido_paterno ||
@@ -44,12 +44,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Validar género contra el dominio public.genero
+    //Validar género contra el dominio 
     if (!['Femenino', 'Masculino', 'Otros'].includes(genero)) {
       return NextResponse.json({ error: 'Género seleccionado no válido.' }, { status: 400 });
     }
 
-    // 3. Validar RUN chileno (Módulo 11)
+    // Validar RUN chileno 
     if (!validarRutChileno(run)) {
       return NextResponse.json(
         { error: 'El RUN ingresado no es válido (verifica el dígito verificador).' },
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
     const runFormateado = formatearRut(run);
     const correoLimpio = correo.trim().toLowerCase();
 
-    // 4. Validar contraseña segura
+    //  Validar contraseña segura
     const validacionPass = validarPasswordSegura(password);
     if (!validacionPass.valida) {
       return NextResponse.json(
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Verificar duplicidad de correo o RUN (HU-01 Escenario 2)
+    // Verificar duplicidad de correo o RUN 
     const existeRes = await query(
       `SELECT correo, run FROM public.usuario 
        WHERE LOWER(correo) = LOWER($1) OR run = $2 LIMIT 1`,
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: mensaje }, { status: 409 });
     }
 
-    // 6. Asegurar ID real de Profesión en la BD
+
     let idProfesionFinal = Number(profesion_id_profesion);
     if (profesion_nombre) {
       const profRes = await query(
@@ -97,7 +97,6 @@ export async function POST(request: Request) {
       idProfesionFinal = profRes.rows[0].id_profesion;
     }
 
-    // 7. Asegurar ID real de Área de Trabajo en la BD
     let idAreaFinal = Number(area_de_trabajo_id_area);
     if (area_nombre) {
       const areaRes = await query(
@@ -110,7 +109,6 @@ export async function POST(request: Request) {
       idAreaFinal = areaRes.rows[0].id_area;
     }
 
-    // 8. Asegurar ID real de Región y Ciudad en la BD
     let idCiudadFinal = Number(ciudad_id_ciudad);
     if (region_nombre && ciudad_nombre) {
       const regRes = await query(
@@ -132,7 +130,6 @@ export async function POST(request: Request) {
       idCiudadFinal = ciuRes.rows[0].id_ciudad;
     }
 
-    // 9. Asegurar y obtener siempre el rol 'usuario' (cliente normal)
     const rolRes = await query(
       `INSERT INTO public.rol_usuario (nombre_rol)
        VALUES ('usuario')
@@ -170,7 +167,7 @@ export async function POST(request: Request) {
 
     const nuevoUsuario = insertUserRes.rows[0];
 
-    // 11. Inicializar Perfil Profesional y Progreso de Contenidos
+    //Inicializar Perfil Profesional y Progreso de Contenidos
     await query(
       `INSERT INTO public.perfil_profesional (usuario_id_usuario)
        VALUES ($1) ON CONFLICT DO NOTHING`,
@@ -185,7 +182,7 @@ export async function POST(request: Request) {
       [nuevoUsuario.id_usuario]
     );
 
-    // 12. Crear sesión automática y redirigir a /modulos
+    //Crear sesión automática y redirigir a /modulos
     const token = await crearTokenSesion({
       id_usuario: nuevoUsuario.id_usuario,
       run: nuevoUsuario.run,
