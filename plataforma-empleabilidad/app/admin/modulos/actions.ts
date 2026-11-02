@@ -64,10 +64,6 @@ export async function actualizarModulo(param1: any, param2?: FormData) {
   }
 }
 
-// ==========================================
-// ACCIONES DE CONTENIDOS / LECCIONES
-// ==========================================
-
 export async function crearContenidoAction(formData: FormData) {
   try {
     const idModulo = Number(formData.get('modulo_id_modulo') || formData.get('id_modulo'));

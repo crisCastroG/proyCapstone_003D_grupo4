@@ -20,7 +20,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Aseguramos que solo se envíen los valores válidos del DOMAIN
     const estadoDB = estado === 'completado' ? 'completado' : 'no_completado';
     const fechaCompletado = estadoDB === 'completado' ? new Date() : null;
 

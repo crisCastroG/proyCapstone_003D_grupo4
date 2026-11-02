@@ -37,7 +37,7 @@ export async function GET() {
         const leccionesRaw = resultLecciones.rows;
 
 
-        let disponible = true; // La primera lección global siempre inicia desbloqueada
+        let disponible = true; 
         const leccionesProcesadasMap = new Map<number, any>();
 
         for (const leccion of leccionesRaw) {
@@ -48,13 +48,11 @@ export async function GET() {
                 bloqueado: estaBloqueada,
             });
 
-            // La lección subsiguiente sólo se desbloquea si esta lección está 'completado'
             if (estaBloqueada || leccion.estado !== 'completado') {
                 disponible = false;
             }
         }
 
-        // 3. Agrupar módulos y sus lecciones
         const resultModulos = await query(
             `SELECT 
         id_modulo,

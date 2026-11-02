@@ -167,11 +167,8 @@ export default function ContenidoViewPage() {
 
   return (
     <div className="flex flex-col md:flex-row gap-8 -mt-2">
-      {/* ---------------------------------------------------- */}
-      {/* SIDEBAR LATERAL IZQUIERDO                            */}
-      {/* ---------------------------------------------------- */}
+
       <aside className="w-full md:w-80 bg-white border border-[#E2E8F0] rounded-2xl p-5 flex flex-col gap-6 shrink-0 shadow-sm self-start">
-        {/* Card de Progreso General */}
         <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0]">
           <div className="flex items-center gap-2 mb-1">
             <span className="material-symbols-outlined text-[#002547] text-lg">account_circle</span>
@@ -188,7 +185,6 @@ export default function ContenidoViewPage() {
           </div>
         </div>
 
-        {/* Lista de Módulos y Lecciones con Candados */}
         <div className="flex flex-col gap-6">
           {modulos.map((mod) => (
             <div key={mod.id_modulo} className="flex flex-col gap-2">
@@ -255,9 +251,6 @@ export default function ContenidoViewPage() {
         </div>
       </aside>
 
-      {/* ---------------------------------------------------- */}
-      {/* ÁREA PRINCIPAL Y CONTENIDOS DINÁMICOS                */}
-      {/* ---------------------------------------------------- */}
       <main className="flex-1 flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-5">
           <div>
@@ -377,9 +370,6 @@ export default function ContenidoViewPage() {
           )}
         </div>
 
-        {/* ---------------------------------------------------- */}
-        {/* BOTONES DE NAVEGACIÓN Y COMPLETITUD                  */}
-        {/* ---------------------------------------------------- */}
         <footer className="mt-8 pt-6 border-t border-[#E2E8F0] flex items-center justify-between gap-4">
           {navAnterior && !navAnterior.bloqueado ? (
             <Link
