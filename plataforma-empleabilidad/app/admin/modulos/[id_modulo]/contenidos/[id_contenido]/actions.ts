@@ -167,7 +167,11 @@ export async function getContenidoPorId(idContenido: number) {
       SELECT 
         id_contenido,
         titulo_contenido,
-        descripcion_contenido
+        descripcion_contenido,
+        orden_contenido,
+        duracion_estimada,
+        estado_contenido,
+        modulo_id_modulo
       FROM public.contenido
       WHERE id_contenido = $1;
     `;
@@ -191,3 +195,4 @@ export async function eliminarBloqueAction(idBloque: number, idModulo: number, i
     return { success: false, message: error.message || 'Error al eliminar el bloque.' };
   }
 }
+

@@ -44,7 +44,6 @@ export async function POST(request: Request) {
 
     const usuario = result.rows[0];
 
-    
 
     if (usuario.estado_usuario !== 'activo') {
       return NextResponse.json(

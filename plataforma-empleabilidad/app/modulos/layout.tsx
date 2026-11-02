@@ -15,21 +15,16 @@ export default function ModulosLayout({ children }: { children: ReactNode }) {
             </span>
           </Link>
 
+          {/* Navegación ajustada a solo 3 opciones */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
             <Link href="/modulos" className="text-[#002546] border-b-2 border-[#002546] pb-1 font-bold">
               Módulos
             </Link>
-            <a href="#" className="text-[#42474f] hover:text-[#002546] transition-colors">
-              Asesoría
-            </a>
-            <a href="#" className="text-[#42474f] hover:text-[#002546] transition-colors">
-              Progreso
-            </a>
-            <a href="#" className="text-[#42474f] hover:text-[#002546] transition-colors">
-              Recursos
-            </a>
-            <Link href="/admin/modulos" className="text-[#006689] font-bold hover:underline">
-              Ir al Admin 🛠️
+            <Link href="/perfil" className="text-[#42474f] hover:text-[#002546] transition-colors">
+              Perfil Profesional
+            </Link>
+            <Link href="/admin" className="text-[#006689] font-bold hover:underline">
+              Ir al Admin
             </Link>
           </nav>
 

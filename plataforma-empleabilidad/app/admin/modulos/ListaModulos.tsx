@@ -150,7 +150,6 @@ export default function ListaModulos({ modulos }: { modulos: ModuloConContenidos
               </div>
             </div>
 
-
             {isOpen && (
               <div className="border-t border-[#c3c6d0]/30 bg-[#f8fafc] p-5 flex flex-col gap-4">
                 <div className="flex justify-between items-center">
@@ -176,6 +175,7 @@ export default function ListaModulos({ modulos }: { modulos: ModuloConContenidos
                         key={item.id_contenido}
                         className="flex items-center justify-between p-3.5 bg-white rounded-lg border border-[#c3c6d0]/30 hover:border-[#006689]/40 transition-colors"
                       >
+                        {/* ENLACE DIRECTO AL EDITOR DE BLOQUES DE CONTENIDO */}
                         <Link
                           href={`/admin/modulos/${modulo.id_modulo}/contenidos/${item.id_contenido}`}
                           className="flex items-center gap-3 flex-1 group cursor-pointer"
@@ -197,14 +197,21 @@ export default function ListaModulos({ modulos }: { modulos: ModuloConContenidos
                           </div>
                         </Link>
 
-                        <button
-                          type="button"
-                          onClick={() => setContenidoAEliminar(item)}
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors ml-2"
-                          title="Eliminar contenido"
-                        >
-                          <span className="material-symbols-outlined text-base">delete</span>
-                        </button>
+                        {/* ACCIONES: EDITAR METADATOS (LÁPIZ) Y ELIMINAR (PAPELERA) */}
+                        <div className="flex items-center gap-1 ml-2 shrink-0">
+                          <FormularioContenidoModal
+                            idModulo={modulo.id_modulo}
+                            contenidoEditar={item}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setContenidoAEliminar(item)}
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                            title="Eliminar contenido"
+                          >
+                            <span className="material-symbols-outlined text-base">delete</span>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
