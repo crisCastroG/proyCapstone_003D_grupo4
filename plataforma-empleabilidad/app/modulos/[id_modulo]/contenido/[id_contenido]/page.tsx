@@ -286,7 +286,8 @@ export default function ContenidoViewPage() {
                         bloque.url_recurso.includes('vimeo') ||
                         bloque.url_recurso.endsWith('.mp4')));
 
-                  const esImagen = bloque.tipo_bloque === 'imagen' || (bloque.url_recurso && !esVideo);
+                  const esImagen = bloque.tipo_bloque === 'imagen';
+                  const esDescarga = bloque.tipo_bloque === 'descarga';
 
                   return (
                     <div key={bloque.id_bloque} className="flex flex-col gap-3">
@@ -309,6 +310,24 @@ export default function ContenidoViewPage() {
                             className="w-full h-auto max-h-[500px] object-contain rounded-xl"
                           />
                         </div>
+                      )}
+
+                      {esDescarga && bloque.url_recurso && (
+                        <a
+                          href={bloque.url_recurso}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm hover:border-[#38BDF5] transition-colors"
+                        >
+                          <span className="flex items-center gap-3">
+                            <span className="material-symbols-outlined text-[#002547]">description</span>
+                            <span className="text-sm font-bold text-[#002547]">
+                              {bloque.titulo_bloque || 'Descargar archivo'}
+                            </span>
+                          </span>
+                          <span className="material-symbols-outlined text-[#737780]">download</span>
+                        </a>
                       )}
 
                       {bloque.contenido_texto && (

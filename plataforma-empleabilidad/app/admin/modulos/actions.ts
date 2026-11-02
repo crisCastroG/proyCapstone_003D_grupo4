@@ -3,13 +3,27 @@
 import { revalidatePath } from 'next/cache';
 import { query } from '@/lib/db';
 
-export async function crearModulo(formData: FormData) {
+export async function crearModulo(data: FormData | any) {
   try {
-    const titulo = formData.get('titulo_modulo') as string;
-    const descripcion = (formData.get('descripcion_modulo') as string) || null;
-    const posicion = Number(formData.get('posicion_modulo')) || 1;
-    const esGratuito = formData.get('es_gratuito') === 'on' || formData.get('es_gratuito') === 'true';
-    const estaPublicado = formData.get('esta_publicado') === 'on' || formData.get('esta_publicado') === 'true';
+    let titulo: string;
+    let descripcion: string | null;
+    let posicion: number;
+    let esGratuito: boolean;
+    let estaPublicado: boolean;
+
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      titulo = data.get('titulo_modulo') as string;
+      descripcion = (data.get('descripcion_modulo') as string) || null;
+      posicion = Number(data.get('posicion_modulo')) || 1;
+      esGratuito = data.get('es_gratuito') === 'on' || data.get('es_gratuito') === 'true';
+      estaPublicado = data.get('esta_publicado') === 'on' || data.get('esta_publicado') === 'true';
+    } else {
+      titulo = data.titulo_modulo;
+      descripcion = data.descripcion_modulo || null;
+      posicion = Number(data.posicion_modulo) || 1;
+      esGratuito = Boolean(data.es_gratuito);
+      estaPublicado = Boolean(data.esta_publicado);
+    }
 
     await query(
       `INSERT INTO public.modulo (titulo_modulo, descripcion_modulo, posicion_modulo, es_gratuito, esta_publicado)
@@ -25,24 +39,38 @@ export async function crearModulo(formData: FormData) {
   }
 }
 
-export async function actualizarModulo(param1: any, param2?: FormData) {
+export async function actualizarModulo(param1: any, param2?: any) {
   try {
     let idModulo: number;
-    let formData: FormData;
+    let data: any;
 
     if (typeof param1 === 'number' || typeof param1 === 'string') {
       idModulo = Number(param1);
-      formData = param2!;
+      data = param2;
     } else {
-      formData = param1;
-      idModulo = Number(formData.get('id_modulo'));
+      data = param1;
+      idModulo = Number(data instanceof FormData ? data.get('id_modulo') : data.id_modulo);
     }
 
-    const titulo = formData.get('titulo_modulo') as string;
-    const descripcion = (formData.get('descripcion_modulo') as string) || null;
-    const posicion = Number(formData.get('posicion_modulo'));
-    const esGratuito = formData.get('es_gratuito') === 'on' || formData.get('es_gratuito') === 'true';
-    const estaPublicado = formData.get('esta_publicado') === 'on' || formData.get('esta_publicado') === 'true';
+    let titulo: string;
+    let descripcion: string | null;
+    let posicion: number;
+    let esGratuito: boolean;
+    let estaPublicado: boolean;
+
+    if (typeof FormData !== 'undefined' && data instanceof FormData) {
+      titulo = data.get('titulo_modulo') as string;
+      descripcion = (data.get('descripcion_modulo') as string) || null;
+      posicion = Number(data.get('posicion_modulo'));
+      esGratuito = data.get('es_gratuito') === 'on' || data.get('es_gratuito') === 'true';
+      estaPublicado = data.get('esta_publicado') === 'on' || data.get('esta_publicado') === 'true';
+    } else {
+      titulo = data.titulo_modulo;
+      descripcion = data.descripcion_modulo || null;
+      posicion = Number(data.posicion_modulo);
+      esGratuito = Boolean(data.es_gratuito);
+      estaPublicado = Boolean(data.esta_publicado);
+    }
 
     await query(
       `UPDATE public.modulo
@@ -163,5 +191,44 @@ export async function eliminarContenidoAction(idContenido: number) {
   } catch (error: any) {
     console.error('Error en eliminarContenidoAction:', error);
     return { success: false, message: error.message || 'Error al eliminar el contenido.' };
+  }
+}
+
+export async function eliminarModulo(idModulo: number) {
+  try {
+    await query(
+      `DELETE FROM public.recurso WHERE bloque_contenido_id_bloque IN (
+         SELECT id_bloque FROM public.bloque_contenido WHERE contenido_id_contenido IN (
+           SELECT id_contenido FROM public.contenido WHERE modulo_id_modulo = $1
+         )
+       );`,
+      [idModulo]
+    );
+
+    await query(
+      `DELETE FROM public.bloque_contenido WHERE contenido_id_contenido IN (
+         SELECT id_contenido FROM public.contenido WHERE modulo_id_modulo = $1
+       );`,
+      [idModulo]
+    );
+
+    await query(
+      `DELETE FROM public.progreso_contenido WHERE contenido_id_contenido IN (
+         SELECT id_contenido FROM public.contenido WHERE modulo_id_modulo = $1
+       );`,
+      [idModulo]
+    );
+
+
+    await query(`DELETE FROM public.contenido WHERE modulo_id_modulo = $1;`, [idModulo]);
+
+
+    await query(`DELETE FROM public.modulo WHERE id_modulo = $1;`, [idModulo]);
+
+    revalidatePath('/admin/modulos');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error en eliminarModulo:', error);
+    return { success: false, message: error.message || 'Error al eliminar el módulo.' };
   }
 }
