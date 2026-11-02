@@ -439,7 +439,11 @@ CREATE INDEX progreso_contenido_idx ON public.progreso_contenido (contenido_id_c
 
 INSERT INTO public.rol_usuario (nombre_rol)
 VALUES
+('superadministrador'),
 ('administrador'),
 ('usuario');
 
 COMMIT;
+
+
+ON CONFLICT (email) DO NOTHING;

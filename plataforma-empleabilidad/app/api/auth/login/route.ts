@@ -38,9 +38,13 @@ export async function POST(request: Request) {
         { error: 'Credenciales incorrectas. Verifica tu correo y contraseña.' },
         { status: 401 }
       );
+
+      
     }
 
     const usuario = result.rows[0];
+
+    
 
     if (usuario.estado_usuario !== 'activo') {
       return NextResponse.json(
@@ -49,7 +53,10 @@ export async function POST(request: Request) {
       );
     }
 
+    
+
     const passwordValida = await bcrypt.compare(password, usuario.password_hash);
+    console.log('--> ¿CONTRASEÑA VÁLIDA?:', passwordValida);
     if (!passwordValida) {
       return NextResponse.json(
         { error: 'Credenciales incorrectas. Verifica tu correo y contraseña.' },
@@ -103,4 +110,7 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+
+  
+  
 }
