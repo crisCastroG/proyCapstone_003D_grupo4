@@ -5,8 +5,175 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { formatearRut, validarRutChileno } from '@/lib/validators';
 
+const PROFESIONES_LISTA = [
+  'Ingeniero/a Civil Informático/a',
+  'Ingeniero/a Comercial',
+  'Contador/a Auditor/a',
+  'Psicólogo/a',
+  'Abogado/a',
+  'Diseñador/a Gráfico/a',
+  'Enfermero/a',
+  'Arquitecto/a',
+  'Periodista / Comunicador/a Digital',
+  'Administrador/a de Empresas',
+  'Ingeniero/a Industrial',
+  'Médico/a Cirujano/a',
+  'Profesor/a / Docente',
+  'Trabajador/a Social',
+  'Kinesiólogo/a',
+  'Publicista / Especialista en Marketing',
+  'Nutricionista',
+  'Científico/a / Analista de Datos',
+  'Terapeuta Ocupacional',
+  'Administrador/a Gastronómico/a',
+];
+
+const AREAS_LISTA = [
+  'Tecnología de la Información y Desarrollo de Software',
+  'Recursos Humanos y Gestión del Talento',
+  'Finanzas, Contabilidad y Auditoría',
+  'Marketing, Publicidad y Crecimiento (Growth)',
+  'Ventas y Desarrollo de Negocios',
+  'Operaciones y Logística',
+  'Salud y Servicios Sanitarios',
+  'Educación, Formación y EdTech',
+  'Legal, Asuntos Corporativos y Compliance',
+  'Administración General y Gestión Operativa',
+  'Servicio al Cliente y Experiencia del Usuario (CX)',
+  'Diseño, UX/UI y Creatividad Digital',
+  'Minería, Energía y Recursos Naturales',
+  'Construcción e Ingeniería Civil',
+  'Consultoría Estratégica y de Negocios',
+  'Comunicaciones, PR y Medios',
+  'Compras, Abastecimiento y Supply Chain',
+  'Innovación y Transformación Digital',
+  'Medio Ambiente, Sustentabilidad y ESG',
+  'Sector Público y Políticas Públicas',
+];
+
+const REGIONES_Y_CIUDADES: Record<string, string[]> = {
+  'Región de Arica y Parinacota': ['Arica', 'Putre', 'Camarones', 'General Lagos'],
+  'Región de Tarapacá': ['Iquique', 'Alto Hospicio', 'Pozo Almonte', 'Pica', 'Huara'],
+  'Región de Antofagasta': ['Antofagasta', 'Calama', 'Tocopilla', 'Mejillones', 'Taltal', 'San Pedro de Atacama'],
+  'Región de Atacama': ['Copiapó', 'Vallenar', 'Caldera', 'Chañaral', 'Diego de Almagro', 'Huasco'],
+  'Región de Coquimbo': ['La Serena', 'Coquimbo', 'Ovalle', 'Illapel', 'Vicuña', 'Los Vilos', 'Salamanca'],
+  'Región de Valparaíso': [
+    'Valparaíso',
+    'Viña del Mar',
+    'Quilpué',
+    'Villa Alemana',
+    'Concón',
+    'San Antonio',
+    'Quillota',
+    'Los Andes',
+    'San Felipe',
+    'La Ligua',
+    'Limache',
+  ],
+  'Región Metropolitana de Santiago': [
+    'Santiago',
+    'Providencia',
+    'Las Condes',
+    'Ñuñoa',
+    'Maipú',
+    'Puente Alto',
+    'La Florida',
+    'San Bernardo',
+    'Vitacura',
+    'Lo Barnechea',
+    'Peñalolén',
+    'Macul',
+    'San Miguel',
+    'Estación Central',
+    'Quilicura',
+    'Pudahuel',
+    'Recoleta',
+    'Independencia',
+    'Colina',
+    'Melipilla',
+    'Talagante',
+    'Buin',
+    'Paine',
+  ],
+  "Región del Libertador General Bernardo O'Higgins": [
+    'Rancagua',
+    'Machalí',
+    'San Fernando',
+    'Rengo',
+    'Pichilemu',
+    'Santa Cruz',
+    'San Vicente',
+    'Graneros',
+  ],
+  'Región del Maule': ['Talca', 'Curicó', 'Linares', 'Cauquenes', 'Constitución', 'Molina', 'Parral', 'San Javier'],
+  'Región de Ñuble': ['Chillán', 'Chillán Viejo', 'San Carlos', 'Bulnes', 'Quirihue', 'Yungay', 'Coihueco'],
+  'Región del Biobío': [
+    'Concepción',
+    'Talcahuano',
+    'Chiguayante',
+    'San Pedro de la Paz',
+    'Hualpén',
+    'Coronel',
+    'Lota',
+    'Tomé',
+    'Penco',
+    'Santa Juana',
+    'Hualqui',
+    'Los Ángeles',
+    'Cabrero',
+    'Nacimiento',
+    'Mulchén',
+    'Lebu',
+    'Arauco',
+    'Curanilahue',
+    'Cañete',
+  ],
+  'Región de La Araucanía': [
+    'Temuco',
+    'Padre Las Casas',
+    'Villarrica',
+    'Pucón',
+    'Angol',
+    'Victoria',
+    'Lautaro',
+    'Nueva Imperial',
+  ],
+  'Región de Los Ríos': ['Valdivia', 'La Unión', 'Río Bueno', 'Panguipulli', 'Los Lagos', 'Paillaco', 'Mariquina'],
+  'Región de Los Lagos': [
+    'Puerto Montt',
+    'Osorno',
+    'Puerto Varas',
+    'Castro',
+    'Ancud',
+    'Quellón',
+    'Frutillar',
+    'Llanquihue',
+    'Calbuco',
+  ],
+  'Región de Aysén del General Carlos Ibáñez del Campo': [
+    'Coyhaique',
+    'Puerto Aysén',
+    'Chile Chico',
+    'Cochrane',
+    'Cisnes',
+  ],
+  'Región de Magallanes y de la Antártica Chilena': [
+    'Punta Arenas',
+    'Puerto Natales',
+    'Porvenir',
+    'Cabo de Hornos (Puerto Williams)',
+  ],
+};
+
+const LISTA_REGIONES = Object.keys(REGIONES_Y_CIUDADES);
+
 export default function RegisterForm() {
   const router = useRouter();
+
+  // Estados dedicados y directos para Región y Ciudad (imposible que queden bloqueados)
+  const [regionActual, setRegionActual] = useState<string>('Región del Biobío');
+  const [ciudadActual, setCiudadActual] = useState<string>('Concepción');
+
   const [formData, setFormData] = useState({
     nombre: '',
     apellido_paterno: '',
@@ -16,15 +183,15 @@ export default function RegisterForm() {
     genero: 'Masculino',
     telefono: '',
     correo: '',
-    profesion: '',
-    area_trabajo: '',
-    region: 'Región del Biobío',
-    ciudad: 'Concepción',
+    profesion_nombre: PROFESIONES_LISTA[0],
+    area_nombre: AREAS_LISTA[0],
     password: '',
   });
 
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
+
+  const ciudadesDeLaRegion = REGIONES_Y_CIUDADES[regionActual] || [];
 
   const tieneMin8 = formData.password.length >= 8;
   const tieneMayuscula = /[A-Z]/.test(formData.password);
@@ -39,6 +206,13 @@ export default function RegisterForm() {
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const nuevaRegion = e.target.value;
+    setRegionActual(nuevaRegion);
+    const listaCiudades = REGIONES_Y_CIUDADES[nuevaRegion] || [];
+    setCiudadActual(listaCiudades[0] || '');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,7 +234,14 @@ export default function RegisterForm() {
       const res = await fetch('/api/auth/registro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          region_nombre: regionActual,
+          ciudad_nombre: ciudadActual,
+          profesion_id_profesion: 1,
+          area_de_trabajo_id_area: 1,
+          ciudad_id_ciudad: 1,
+        }),
       });
 
       const data = await res.json();
@@ -71,7 +252,7 @@ export default function RegisterForm() {
         return;
       }
 
-      router.push(data.redirectUrl || '/dashboard');
+      router.push(data.redirectUrl || '/modulos');
       router.refresh();
     } catch {
       setError('Error de conexión con el servidor.');
@@ -81,7 +262,7 @@ export default function RegisterForm() {
 
   return (
     <div style={{ backgroundColor: '#F7FAFC', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-      <div style={{ backgroundColor: '#FFFFFF', maxWidth: '640px', width: '100%', padding: '2.5rem', borderRadius: '12px', boxShadow: '0 8px 24px rgba(13, 59, 102, 0.08)', border: '1px solid #E6F2FB' }}>
+      <div style={{ backgroundColor: '#FFFFFF', maxWidth: '680px', width: '100%', padding: '2.5rem', borderRadius: '12px', boxShadow: '0 8px 24px rgba(13, 59, 102, 0.08)', border: '1px solid #E6F2FB' }}>
         <h1 style={{ color: '#0D3B66', fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.35rem' }}>
           Registro de Usuario • Empleamás
         </h1>
@@ -118,7 +299,7 @@ export default function RegisterForm() {
                 type="text"
                 name="run"
                 required
-                placeholder="18817278-3"
+                placeholder="11111111-3"
                 maxLength={12}
                 value={formData.run}
                 onChange={handleChange}
@@ -154,29 +335,77 @@ export default function RegisterForm() {
             </div>
             <div>
               <label style={{ display: 'block', color: '#0D3B66', fontWeight: 600, marginBottom: '0.3rem', fontSize: '0.85rem' }}>Teléfono *</label>
-              <input type="tel" name="telefono" required placeholder="+56 9 1234 5678" value={formData.telefono} onChange={handleChange} style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1' }} />
+              <input type="tel" name="telefono" required placeholder="9 1234 5678" value={formData.telefono} onChange={handleChange} style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1' }} />
             </div>
           </div>
 
+          {/* Profesión y Área de Trabajo */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
             <div>
               <label style={{ display: 'block', color: '#0D3B66', fontWeight: 600, marginBottom: '0.3rem', fontSize: '0.85rem' }}>Profesión / Título *</label>
-              <input type="text" name="profesion" required placeholder="Ej: Ingeniería en Informática" value={formData.profesion} onChange={handleChange} style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1' }} />
+              <select
+                name="profesion_nombre"
+                required
+                value={formData.profesion_nombre}
+                onChange={handleChange}
+                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF' }}
+              >
+                {PROFESIONES_LISTA.map((prof) => (
+                  <option key={prof} value={prof}>
+                    {prof}
+                  </option>
+                ))}
+              </select>
             </div>
+
             <div>
               <label style={{ display: 'block', color: '#0D3B66', fontWeight: 600, marginBottom: '0.3rem', fontSize: '0.85rem' }}>Área de Trabajo *</label>
-              <input type="text" name="area_trabajo" required placeholder="Ej: Tecnología y Sistemas" value={formData.area_trabajo} onChange={handleChange} style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1' }} />
+              <select
+                name="area_nombre"
+                required
+                value={formData.area_nombre}
+                onChange={handleChange}
+                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF' }}
+              >
+                {AREAS_LISTA.map((area) => (
+                  <option key={area} value={area}>
+                    {area}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
+          {/* Región y Ciudad / Comuna (SIEMPRE DESBLOQUEADO Y DINÁMICO) */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
             <div>
               <label style={{ display: 'block', color: '#0D3B66', fontWeight: 600, marginBottom: '0.3rem', fontSize: '0.85rem' }}>Región *</label>
-              <input type="text" name="region" required value={formData.region} onChange={handleChange} style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1' }} />
+              <select
+                value={regionActual}
+                onChange={handleRegionChange}
+                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF', cursor: 'pointer' }}
+              >
+                {LISTA_REGIONES.map((reg) => (
+                  <option key={reg} value={reg}>
+                    {reg}
+                  </option>
+                ))}
+              </select>
             </div>
+
             <div>
-              <label style={{ display: 'block', color: '#0D3B66', fontWeight: 600, marginBottom: '0.3rem', fontSize: '0.85rem' }}>Ciudad *</label>
-              <input type="text" name="ciudad" required value={formData.ciudad} onChange={handleChange} style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1' }} />
+              <label style={{ display: 'block', color: '#0D3B66', fontWeight: 600, marginBottom: '0.3rem', fontSize: '0.85rem' }}>Ciudad / Comuna *</label>
+              <select
+                value={ciudadActual}
+                onChange={(e) => setCiudadActual(e.target.value)}
+                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF', cursor: 'pointer' }}
+              >
+                {ciudadesDeLaRegion.map((ciudad) => (
+                  <option key={ciudad} value={ciudad}>
+                    {ciudad}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

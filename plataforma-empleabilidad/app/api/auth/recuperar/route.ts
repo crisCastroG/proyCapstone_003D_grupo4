@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     const token = crypto.randomBytes(32).toString('hex');
-    const expiraEn = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos (HU-03)
+    const expiraEn = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos exactos (HU-03)
 
     const updateRes = await query(
       `UPDATE public.usuario
@@ -24,13 +24,19 @@ export async function POST(request: Request) {
       [token, expiraEn, correo.trim()]
     );
 
-    if (updateRes.rows.length > 0) {
-      const resetLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/recuperar_password?token=${token}`;
-      console.log(`[HU-03 Enlace de recuperación para ${correo}]: ${resetLink}`);
+    if (updateRes.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'No encontramos una cuenta activa asociada a ese correo electrónico.' },
+        { status: 404 }
+      );
     }
 
+    const resetLink = `/recuperar_password?token=${token}`;
+    console.log(`[HU-03 Enlace de recuperación para ${correo}]: http://localhost:3000${resetLink}`);
+
     return NextResponse.json({
-      mensaje: 'Si el correo está registrado, recibirás un enlace válido por 15 minutos.',
+      mensaje: 'Se ha generado tu enlace temporal de recuperación (válido por 15 minutos).',
+      resetLink, // Permite abrir el enlace directamente en las pruebas del Sprint
     });
   } catch (error) {
     console.error('Error al generar código de recuperación:', error);
@@ -58,7 +64,7 @@ export async function PUT(request: Request) {
     );
 
     if (userRes.rows.length === 0) {
-      return NextResponse.json({ error: 'Código de recuperación inválido.' }, { status: 400 });
+      return NextResponse.json({ error: 'El enlace o código de recuperación no es válido.' }, { status: 400 });
     }
 
     const usuario = userRes.rows[0];
@@ -67,7 +73,7 @@ export async function PUT(request: Request) {
       new Date(usuario.expiracion_codigo_recuperacion) < new Date()
     ) {
       return NextResponse.json(
-        { error: 'El enlace de recuperación ha expirado (superó los 15 minutos).' },
+        { error: 'El enlace de recuperación ha caducado (superó los 15 minutos).' },
         { status: 400 }
       );
     }
@@ -84,7 +90,7 @@ export async function PUT(request: Request) {
       [nuevoHash, usuario.id_usuario]
     );
 
-    return NextResponse.json({ mensaje: 'Contraseña actualizada correctamente.' });
+    return NextResponse.json({ mensaje: 'Contraseña restablecida correctamente.' });
   } catch (error) {
     console.error('Error al actualizar contraseña:', error);
     return NextResponse.json({ error: 'Error al restablecer la contraseña.' }, { status: 500 });
