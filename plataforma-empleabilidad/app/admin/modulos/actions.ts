@@ -1,110 +1,167 @@
 'use server';
 
-import { query } from '@/lib/db';
-import { Modulo, ModuloInput } from '@/lib/types/modulo';
 import { revalidatePath } from 'next/cache';
+import { query } from '@/lib/db';
 
-export async function obtenerModulos(): Promise<Modulo[]> {
+export async function crearModulo(formData: FormData) {
   try {
-    const res = await query(
-      `SELECT id_modulo, titulo_modulo, descripcion_modulo, posicion_modulo, 
-              esta_publicado, es_gratuito, fecha_creacion 
-       FROM public.modulo 
-       ORDER BY posicion_modulo ASC`
-    );
-    return res.rows;
-  } catch (error) {
-    console.error('Error al obtener módulos:', error);
-    throw new Error('No se pudieron obtener los módulos.');
-  }
-}
+    const titulo = formData.get('titulo_modulo') as string;
+    const descripcion = (formData.get('descripcion_modulo') as string) || null;
+    const posicion = Number(formData.get('posicion_modulo')) || 1;
+    const esGratuito = formData.get('es_gratuito') === 'on' || formData.get('es_gratuito') === 'true';
+    const estaPublicado = formData.get('esta_publicado') === 'on' || formData.get('esta_publicado') === 'true';
 
-export async function crearModulo(datos: ModuloInput) {
-  try {
     await query(
-      `INSERT INTO public.modulo 
-        (titulo_modulo, descripcion_modulo, posicion_modulo, esta_publicado, es_gratuito) 
+      `INSERT INTO public.modulo (titulo_modulo, descripcion_modulo, posicion_modulo, es_gratuito, esta_publicado)
        VALUES ($1, $2, $3, $4, $5)`,
-      [
-        datos.titulo_modulo,
-        datos.descripcion_modulo || null,
-        datos.posicion_modulo,
-        datos.esta_publicado,
-        datos.es_gratuito,
-      ]
+      [titulo, descripcion, posicion, esGratuito, estaPublicado]
     );
 
     revalidatePath('/admin/modulos');
-    return { success: true, message: 'Módulo creado exitosamente' };
+    return { success: true };
   } catch (error: any) {
-    console.error('Error al crear módulo:', error);
-    return { success: false, message: error.message || 'Error al crear el módulo' };
+    console.error('Error en crearModulo:', error);
+    return { success: false, message: error.message || 'Error al crear el módulo.' };
   }
 }
 
-export async function actualizarModulo(id_modulo: number, datos: ModuloInput) {
+export async function actualizarModulo(param1: any, param2?: FormData) {
   try {
+    let idModulo: number;
+    let formData: FormData;
+
+    if (typeof param1 === 'number' || typeof param1 === 'string') {
+      idModulo = Number(param1);
+      formData = param2!;
+    } else {
+      formData = param1;
+      idModulo = Number(formData.get('id_modulo'));
+    }
+
+    const titulo = formData.get('titulo_modulo') as string;
+    const descripcion = (formData.get('descripcion_modulo') as string) || null;
+    const posicion = Number(formData.get('posicion_modulo'));
+    const esGratuito = formData.get('es_gratuito') === 'on' || formData.get('es_gratuito') === 'true';
+    const estaPublicado = formData.get('esta_publicado') === 'on' || formData.get('esta_publicado') === 'true';
+
     await query(
-      `UPDATE public.modulo 
-       SET titulo_modulo = $1, 
-           descripcion_modulo = $2, 
-           posicion_modulo = $3, 
-           esta_publicado = $4, 
-           es_gratuito = $5 
+      `UPDATE public.modulo
+       SET 
+         titulo_modulo = $1,
+         descripcion_modulo = $2,
+         posicion_modulo = $3,
+         es_gratuito = $4,
+         esta_publicado = $5
        WHERE id_modulo = $6`,
-      [
-        datos.titulo_modulo,
-        datos.descripcion_modulo || null,
-        datos.posicion_modulo,
-        datos.esta_publicado,
-        datos.es_gratuito,
-        id_modulo,
-      ]
+      [titulo, descripcion, posicion, esGratuito, estaPublicado, idModulo]
     );
 
     revalidatePath('/admin/modulos');
-    return { success: true, message: 'Módulo actualizado exitosamente' };
+    return { success: true };
   } catch (error: any) {
-    console.error('Error al actualizar módulo:', error);
-    return { success: false, message: error.message || 'Error al actualizar el módulo' };
+    console.error('Error en actualizarModulo:', error);
+    return { success: false, message: error.message || 'Error al actualizar el módulo.' };
   }
 }
 
 export async function crearContenidoAction(formData: FormData) {
-  const modulo_id_modulo = parseInt(formData.get('modulo_id_modulo') as string, 10);
-  const titulo_contenido = formData.get('titulo_contenido') as string;
-  const descripcion_contenido = formData.get('descripcion_contenido') as string;
-  const orden_contenido = parseInt(formData.get('orden_contenido') as string || '1', 10);
-  const duracion_estimada = parseInt(formData.get('duracion_estimada') as string || '5', 10);
-  const estado_contenido = (formData.get('estado_contenido') as string) || 'publicado';
+  try {
+    const idModulo = Number(formData.get('modulo_id_modulo') || formData.get('id_modulo'));
+    const titulo = formData.get('titulo_contenido') as string;
+    const descripcion = (formData.get('descripcion_contenido') as string) || null;
+    const orden = Number(formData.get('orden_contenido')) || 1;
+    const duracion = Number(formData.get('duracion_estimada')) || 10;
+    const estado = ((formData.get('estado_contenido') as string) || 'publicado').toLowerCase();
 
-  if (!modulo_id_modulo || !titulo_contenido) {
-    throw new Error('El título y el módulo son obligatorios');
+    const insertSql = `
+      INSERT INTO public.contenido (
+        modulo_id_modulo,
+        titulo_contenido,
+        descripcion_contenido,
+        orden_contenido,
+        duracion_estimada,
+        estado_contenido,
+        fecha_publicacion
+      )
+      VALUES (
+        $1, $2, $3, $4, $5, 
+        $6::public.estado_contenido, 
+        CASE WHEN $6 = 'publicado' THEN CURRENT_TIMESTAMP ELSE NULL END
+      );
+    `;
+
+    await query(insertSql, [idModulo, titulo, descripcion, orden, duracion, estado]);
+
+    revalidatePath('/admin/modulos');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error en crearContenidoAction:', error);
+    if (error.code === '23505') {
+      return {
+        success: false,
+        message: 'El número de orden ya está asignado a otro contenido de este módulo.',
+      };
+    }
+    return { success: false, message: error.message || 'Error al crear el contenido.' };
   }
+}
 
-  await query(
-    `INSERT INTO contenido (
-      modulo_id_modulo, 
-      titulo_contenido, 
-      descripcion_contenido, 
-      orden_contenido, 
-      duracion_estimada, 
-      estado_contenido
-    ) VALUES ($1, $2, $3, $4, $5, $6)`,
-    [
-      modulo_id_modulo,
-      titulo_contenido,
-      descripcion_contenido || null,
-      orden_contenido,
-      duracion_estimada,
-      estado_contenido,
-    ]
-  );
+export async function actualizarContenidoAction(formData: FormData) {
+  try {
+    const idContenido = Number(formData.get('id_contenido'));
+    const idModulo = Number(formData.get('modulo_id_modulo') || formData.get('id_modulo'));
+    const titulo = formData.get('titulo_contenido') as string;
+    const descripcion = (formData.get('descripcion_contenido') as string) || null;
+    const orden = Number(formData.get('orden_contenido'));
+    const duracion = Number(formData.get('duracion_estimada'));
+    const estado = ((formData.get('estado_contenido') as string) || 'publicado').toLowerCase();
 
-  revalidatePath('/admin/modulos');
+    const updateSql = `
+      UPDATE public.contenido
+      SET 
+        modulo_id_modulo = $1,
+        titulo_contenido = $2,
+        descripcion_contenido = $3,
+        orden_contenido = $4,
+        duracion_estimada = $5,
+        estado_contenido = $6::public.estado_contenido,
+        fecha_publicacion = CASE 
+          WHEN $6 = 'publicado' THEN COALESCE(fecha_publicacion, CURRENT_TIMESTAMP) 
+          ELSE fecha_publicacion 
+        END
+      WHERE id_contenido = $7;
+    `;
+
+    await query(updateSql, [idModulo, titulo, descripcion, orden, duracion, estado, idContenido]);
+
+    revalidatePath('/admin/modulos');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error en actualizarContenidoAction:', error);
+    if (error.code === '23505') {
+      return {
+        success: false,
+        message: 'El número de orden ya está asignado a otro contenido de este módulo.',
+      };
+    }
+    return { success: false, message: error.message || 'Error al actualizar el contenido.' };
+  }
 }
 
 export async function eliminarContenidoAction(idContenido: number) {
-  await query(`DELETE FROM contenido WHERE id_contenido = $1`, [idContenido]);
-  revalidatePath('/admin/modulos');
+  try {
+    await query(`DELETE FROM public.progreso_contenido WHERE contenido_id_contenido = $1;`, [idContenido]);
+    await query(
+      `DELETE FROM public.recurso WHERE bloque_contenido_id_bloque IN (SELECT id_bloque FROM public.bloque_contenido WHERE contenido_id_contenido = $1);`,
+      [idContenido]
+    );
+    await query(`DELETE FROM public.bloque_contenido WHERE contenido_id_contenido = $1;`, [idContenido]);
+    await query(`DELETE FROM public.contenido WHERE id_contenido = $1;`, [idContenido]);
+
+    revalidatePath('/admin/modulos');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error en eliminarContenidoAction:', error);
+    return { success: false, message: error.message || 'Error al eliminar el contenido.' };
+  }
 }

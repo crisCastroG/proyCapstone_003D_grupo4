@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import BotonCerrarSesion from '@/components/BotonCerrarSesion';
 
 export default function AdminNavbar() {
   const pathname = usePathname();
@@ -9,7 +10,6 @@ export default function AdminNavbar() {
   return (
     <header className="bg-white border-b border-[#c3c6d0]/40 shadow-sm sticky top-0 z-50 w-full">
       <div className="flex justify-between items-center h-16 px-6 max-w-[1200px] mx-auto w-full">
-        {/* Logo */}
         <Link href="/admin" className="flex items-center gap-2">
           <span className="material-symbols-outlined text-[#002546] text-3xl font-bold">
             notes
@@ -29,15 +29,6 @@ export default function AdminNavbar() {
               }`}
           >
             Módulos
-          </Link>
-          <Link
-            href="/admin"
-            className={`pb-1 transition-all ${pathname === '/admin'
-                ? 'text-[#002546] border-b-2 border-[#002546] font-bold'
-                : 'text-[#42474f] hover:text-[#002546]'
-              }`}
-          >
-            Panel General
           </Link>
           <Link
             href="/modulos"
@@ -62,6 +53,7 @@ export default function AdminNavbar() {
             AD
           </div>
         </div>
+        <BotonCerrarSesion className="ml-2 text-sm font-semibold text-[#42474f] hover:text-[#002546] hover:bg-[#f1f4f6] border border-[#c3c6d0] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60" />
       </div>
     </header>
   );
