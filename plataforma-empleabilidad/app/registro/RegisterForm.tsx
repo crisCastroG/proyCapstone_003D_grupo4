@@ -1,178 +1,61 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { formatearRut, validarRutChileno } from '@/lib/validators';
 
-const PROFESIONES_LISTA = [
-  'Ingeniero/a Civil Informático/a',
-  'Ingeniero/a Comercial',
-  'Contador/a Auditor/a',
-  'Psicólogo/a',
-  'Abogado/a',
-  'Diseñador/a Gráfico/a',
-  'Enfermero/a',
-  'Arquitecto/a',
-  'Periodista / Comunicador/a Digital',
-  'Administrador/a de Empresas',
-  'Ingeniero/a Industrial',
-  'Médico/a Cirujano/a',
-  'Profesor/a / Docente',
-  'Trabajador/a Social',
-  'Kinesiólogo/a',
-  'Publicista / Especialista en Marketing',
-  'Nutricionista',
-  'Científico/a / Analista de Datos',
-  'Terapeuta Ocupacional',
-  'Administrador/a Gastronómico/a',
-];
+interface Profesion {
+  id_profesion: number;
+  nombre_profesion: string;
+}
 
-const AREAS_LISTA = [
-  'Tecnología de la Información y Desarrollo de Software',
-  'Recursos Humanos y Gestión del Talento',
-  'Finanzas, Contabilidad y Auditoría',
-  'Marketing, Publicidad y Crecimiento (Growth)',
-  'Ventas y Desarrollo de Negocios',
-  'Operaciones y Logística',
-  'Salud y Servicios Sanitarios',
-  'Educación, Formación y EdTech',
-  'Legal, Asuntos Corporativos y Compliance',
-  'Administración General y Gestión Operativa',
-  'Servicio al Cliente y Experiencia del Usuario (CX)',
-  'Diseño, UX/UI y Creatividad Digital',
-  'Minería, Energía y Recursos Naturales',
-  'Construcción e Ingeniería Civil',
-  'Consultoría Estratégica y de Negocios',
-  'Comunicaciones, PR y Medios',
-  'Compras, Abastecimiento y Supply Chain',
-  'Innovación y Transformación Digital',
-  'Medio Ambiente, Sustentabilidad y ESG',
-  'Sector Público y Políticas Públicas',
-];
+interface Area {
+  id_area: number;
+  nombre_area: string;
+}
 
-const REGIONES_Y_CIUDADES: Record<string, string[]> = {
-  'Región de Arica y Parinacota': ['Arica', 'Putre', 'Camarones', 'General Lagos'],
-  'Región de Tarapacá': ['Iquique', 'Alto Hospicio', 'Pozo Almonte', 'Pica', 'Huara'],
-  'Región de Antofagasta': ['Antofagasta', 'Calama', 'Tocopilla', 'Mejillones', 'Taltal', 'San Pedro de Atacama'],
-  'Región de Atacama': ['Copiapó', 'Vallenar', 'Caldera', 'Chañaral', 'Diego de Almagro', 'Huasco'],
-  'Región de Coquimbo': ['La Serena', 'Coquimbo', 'Ovalle', 'Illapel', 'Vicuña', 'Los Vilos', 'Salamanca'],
-  'Región de Valparaíso': [
-    'Valparaíso',
-    'Viña del Mar',
-    'Quilpué',
-    'Villa Alemana',
-    'Concón',
-    'San Antonio',
-    'Quillota',
-    'Los Andes',
-    'San Felipe',
-    'La Ligua',
-    'Limache',
-  ],
-  'Región Metropolitana de Santiago': [
-    'Santiago',
-    'Providencia',
-    'Las Condes',
-    'Ñuñoa',
-    'Maipú',
-    'Puente Alto',
-    'La Florida',
-    'San Bernardo',
-    'Vitacura',
-    'Lo Barnechea',
-    'Peñalolén',
-    'Macul',
-    'San Miguel',
-    'Estación Central',
-    'Quilicura',
-    'Pudahuel',
-    'Recoleta',
-    'Independencia',
-    'Colina',
-    'Melipilla',
-    'Talagante',
-    'Buin',
-    'Paine',
-  ],
-  "Región del Libertador General Bernardo O'Higgins": [
-    'Rancagua',
-    'Machalí',
-    'San Fernando',
-    'Rengo',
-    'Pichilemu',
-    'Santa Cruz',
-    'San Vicente',
-    'Graneros',
-  ],
-  'Región del Maule': ['Talca', 'Curicó', 'Linares', 'Cauquenes', 'Constitución', 'Molina', 'Parral', 'San Javier'],
-  'Región de Ñuble': ['Chillán', 'Chillán Viejo', 'San Carlos', 'Bulnes', 'Quirihue', 'Yungay', 'Coihueco'],
-  'Región del Biobío': [
-    'Concepción',
-    'Talcahuano',
-    'Chiguayante',
-    'San Pedro de la Paz',
-    'Hualpén',
-    'Coronel',
-    'Lota',
-    'Tomé',
-    'Penco',
-    'Santa Juana',
-    'Hualqui',
-    'Los Ángeles',
-    'Cabrero',
-    'Nacimiento',
-    'Mulchén',
-    'Lebu',
-    'Arauco',
-    'Curanilahue',
-    'Cañete',
-  ],
-  'Región de La Araucanía': [
-    'Temuco',
-    'Padre Las Casas',
-    'Villarrica',
-    'Pucón',
-    'Angol',
-    'Victoria',
-    'Lautaro',
-    'Nueva Imperial',
-  ],
-  'Región de Los Ríos': ['Valdivia', 'La Unión', 'Río Bueno', 'Panguipulli', 'Los Lagos', 'Paillaco', 'Mariquina'],
-  'Región de Los Lagos': [
-    'Puerto Montt',
-    'Osorno',
-    'Puerto Varas',
-    'Castro',
-    'Ancud',
-    'Quellón',
-    'Frutillar',
-    'Llanquihue',
-    'Calbuco',
-  ],
-  'Región de Aysén del General Carlos Ibáñez del Campo': [
-    'Coyhaique',
-    'Puerto Aysén',
-    'Chile Chico',
-    'Cochrane',
-    'Cisnes',
-  ],
-  'Región de Magallanes y de la Antártica Chilena': [
-    'Punta Arenas',
-    'Puerto Natales',
-    'Porvenir',
-    'Cabo de Hornos (Puerto Williams)',
-  ],
-};
+interface Region {
+  id_region: number;
+  nombre_region: string;
+}
 
-const LISTA_REGIONES = Object.keys(REGIONES_Y_CIUDADES);
+interface Ciudad {
+  id_ciudad: number;
+  nombre_ciudad: string;
+  region_id_region: number;
+}
+
+
+function autoFormatearRun(valor: string): string {
+  // Quitamos todo lo que no sea número o letra K
+  const limpio = valor.replace(/[^0-9kK]/g, '').toUpperCase().slice(0, 9);
+  if (limpio.length <= 1) return limpio;
+  const cuerpo = limpio.slice(0, -1);
+  const dv = limpio.slice(-1);
+  return `${cuerpo}-${dv}`;
+}
+
+
+function esRunChilenoValido(run: string): boolean {
+  const limpio = run.replace(/[^0-9kK]/g, '').toUpperCase();
+  if (limpio.length < 8 || limpio.length > 9) return false;
+  const cuerpo = limpio.slice(0, -1);
+  const dvIngresado = limpio.slice(-1);
+  if (!/^\d+$/.test(cuerpo)) return false;
+
+  let suma = 0;
+  let multiplo = 2;
+  for (let i = cuerpo.length - 1; i >= 0; i--) {
+    suma += parseInt(cuerpo.charAt(i), 10) * multiplo;
+    multiplo = multiplo < 7 ? multiplo + 1 : 2;
+  }
+  const dvEsperado = 11 - (suma % 11);
+  const dvCalculado = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : dvEsperado.toString();
+  return dvIngresado === dvCalculado;
+}
 
 export default function RegisterForm() {
   const router = useRouter();
-
-  // Estados dedicados y directos para Región y Ciudad (imposible que queden bloqueados)
-  const [regionActual, setRegionActual] = useState<string>('Región del Biobío');
-  const [ciudadActual, setCiudadActual] = useState<string>('Concepción');
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -183,44 +66,90 @@ export default function RegisterForm() {
     genero: 'Masculino',
     telefono: '',
     correo: '',
-    profesion_nombre: PROFESIONES_LISTA[0],
-    area_nombre: AREAS_LISTA[0],
     password: '',
   });
 
+
+  // Profesiones, áreas, regiones y ciudades vienen de la base de datos 
+  const [profesiones, setProfesiones] = useState<Profesion[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [profesionId, setProfesionId] = useState('');
+  const [areaId, setAreaId] = useState('');
+  const [regiones, setRegiones] = useState<Region[]>([]);
+  const [ciudades, setCiudades] = useState<Ciudad[]>([]);
+  const [regionId, setRegionId] = useState('');
+  const [ciudadId, setCiudadId] = useState('');
+  const [cargandoCatalogos, setCargandoCatalogos] = useState(true);
+  const [errorCatalogos, setErrorCatalogos] = useState('');
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
 
-  const ciudadesDeLaRegion = REGIONES_Y_CIUDADES[regionActual] || [];
+  useEffect(() => {
+    let cancelado = false;
+
+    fetch('/api/catalogos')
+      .then((res) => {
+        if (!res.ok) throw new Error('No se pudieron cargar los catálogos');
+        return res.json();
+      })
+      .then((data) => {
+        if (cancelado) return;
+        setProfesiones(data.profesiones ?? []);
+        setAreas(data.areas ?? []);
+        setRegiones(data.regiones ?? []);
+        setCiudades(data.ciudades ?? []);
+      })
+      .catch(() => {
+        if (!cancelado) {
+          setErrorCatalogos('No se pudieron cargar las opciones del formulario. Recarga la página.');
+        }
+      })
+      .finally(() => {
+        if (!cancelado) setCargandoCatalogos(false);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  // Ciudades de la región elegida
+  const ciudadesDisponibles = ciudades.filter((c) => String(c.region_id_region) === regionId);
 
   const tieneMin8 = formData.password.length >= 8;
   const tieneMayuscula = /[A-Z]/.test(formData.password);
   const tieneMinuscula = /[a-z]/.test(formData.password);
   const tieneNumero = /[0-9]/.test(formData.password);
-  const runEsValido = formData.run.length > 7 ? validarRutChileno(formData.run) : null;
+  const runEsValido = formData.run.length >= 9 ? esRunChilenoValido(formData.run) : null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (name === 'run') {
-      setFormData((prev) => ({ ...prev, run: formatearRut(value) }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+
+  const handleRunChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const runConGuion = autoFormatearRun(e.target.value);
+    setFormData((prev) => ({ ...prev, run: runConGuion }));
+  };
+
+ 
   const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const nuevaRegion = e.target.value;
-    setRegionActual(nuevaRegion);
-    const listaCiudades = REGIONES_Y_CIUDADES[nuevaRegion] || [];
-    setCiudadActual(listaCiudades[0] || '');
+    setRegionId(e.target.value);
+    setCiudadId('');
   };
 
  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!validarRutChileno(formData.run)) {
+    if (!esRunChilenoValido(formData.run)) {
       setError('Por favor ingresa un RUN chileno válido.');
+      return;
+    }
+
+    if (!profesionId || !areaId || !regionId || !ciudadId) {
+      setError('Por favor selecciona tu profesión, área de trabajo, región y ciudad.');
       return;
     }
 
@@ -236,11 +165,9 @@ export default function RegisterForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          region_nombre: regionActual,
-          ciudad_nombre: ciudadActual,
-          profesion_id_profesion: 1,
-          area_de_trabajo_id_area: 1,
-          ciudad_id_ciudad: 1,
+          profesion_id_profesion: Number(profesionId),
+          area_de_trabajo_id_area: Number(areaId),
+          ciudad_id_ciudad: Number(ciudadId),
         }),
       });
 
@@ -270,9 +197,9 @@ export default function RegisterForm() {
           Completa tus datos personales y laborales para acceder a tu ruta de empleabilidad.
         </p>
 
-        {error && (
+        {(error || errorCatalogos) && (
           <div style={{ backgroundColor: '#FEE2E2', color: '#991B1B', padding: '0.85rem', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.9rem', fontWeight: 500 }}>
-            {error}
+            {error || errorCatalogos}
           </div>
         )}
 
@@ -300,9 +227,9 @@ export default function RegisterForm() {
                 name="run"
                 required
                 placeholder="11111111-3"
-                maxLength={12}
+                maxLength={10}
                 value={formData.run}
-                onChange={handleChange}
+                onChange={handleRunChange}
                 style={{
                   width: '100%',
                   padding: '0.7rem',
@@ -344,15 +271,17 @@ export default function RegisterForm() {
             <div>
               <label style={{ display: 'block', color: '#0D3B66', fontWeight: 600, marginBottom: '0.3rem', fontSize: '0.85rem' }}>Profesión / Título *</label>
               <select
-                name="profesion_nombre"
+                name="profesion_id"
                 required
-                value={formData.profesion_nombre}
-                onChange={handleChange}
-                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF' }}
+                disabled={cargandoCatalogos}
+                value={profesionId}
+                onChange={(e) => setProfesionId(e.target.value)}
+                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF', cursor: 'pointer' }}
               >
-                {PROFESIONES_LISTA.map((prof) => (
-                  <option key={prof} value={prof}>
-                    {prof}
+                <option value="">{cargandoCatalogos ? 'Cargando profesiones...' : 'Selecciona tu profesión'}</option>
+                {profesiones.map((p) => (
+                  <option key={p.id_profesion} value={String(p.id_profesion)}>
+                    {p.nombre_profesion}
                   </option>
                 ))}
               </select>
@@ -361,33 +290,39 @@ export default function RegisterForm() {
             <div>
               <label style={{ display: 'block', color: '#0D3B66', fontWeight: 600, marginBottom: '0.3rem', fontSize: '0.85rem' }}>Área de Trabajo *</label>
               <select
-                name="area_nombre"
+                name="area_id"
                 required
-                value={formData.area_nombre}
-                onChange={handleChange}
-                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF' }}
+                disabled={cargandoCatalogos}
+                value={areaId}
+                onChange={(e) => setAreaId(e.target.value)}
+                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF', cursor: 'pointer' }}
               >
-                {AREAS_LISTA.map((area) => (
-                  <option key={area} value={area}>
-                    {area}
+                <option value="">{cargandoCatalogos ? 'Cargando áreas...' : 'Selecciona tu área de trabajo'}</option>
+                {areas.map((a) => (
+                  <option key={a.id_area} value={String(a.id_area)}>
+                    {a.nombre_area}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Región y Ciudad / Comuna (SIEMPRE DESBLOQUEADO Y DINÁMICO) */}
+          {/* Región y Ciudad / Comuna */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
             <div>
               <label style={{ display: 'block', color: '#0D3B66', fontWeight: 600, marginBottom: '0.3rem', fontSize: '0.85rem' }}>Región *</label>
               <select
-                value={regionActual}
+                name="region_id"
+                required
+                disabled={cargandoCatalogos}
+                value={regionId}
                 onChange={handleRegionChange}
                 style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF', cursor: 'pointer' }}
               >
-                {LISTA_REGIONES.map((reg) => (
-                  <option key={reg} value={reg}>
-                    {reg}
+                <option value="">{cargandoCatalogos ? 'Cargando regiones...' : 'Selecciona tu región'}</option>
+                {regiones.map((r) => (
+                  <option key={r.id_region} value={String(r.id_region)}>
+                    {r.nombre_region}
                   </option>
                 ))}
               </select>
@@ -396,13 +331,17 @@ export default function RegisterForm() {
             <div>
               <label style={{ display: 'block', color: '#0D3B66', fontWeight: 600, marginBottom: '0.3rem', fontSize: '0.85rem' }}>Ciudad / Comuna *</label>
               <select
-                value={ciudadActual}
-                onChange={(e) => setCiudadActual(e.target.value)}
+                name="ciudad_id"
+                required
+                disabled={!regionId}
+                value={ciudadId}
+                onChange={(e) => setCiudadId(e.target.value)}
                 style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF', cursor: 'pointer' }}
               >
-                {ciudadesDeLaRegion.map((ciudad) => (
-                  <option key={ciudad} value={ciudad}>
-                    {ciudad}
+                <option value="">Selecciona tu ciudad</option>
+                {ciudadesDisponibles.map((ciudad) => (
+                  <option key={ciudad.id_ciudad} value={String(ciudad.id_ciudad)}>
+                    {ciudad.nombre_ciudad}
                   </option>
                 ))}
               </select>

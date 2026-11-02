@@ -11,7 +11,7 @@ export function formatearRut(rut: string): string {
   return `${cuerpo}-${dv}`;
 }
 
-// Validación oficial Módulo 11 para RUT Chileno
+// Validación para RUT Chileno
 export function validarRutChileno(rut: string): boolean {
   const limpio = limpiarRut(rut);
   if (limpio.length < 8 || limpio.length > 9) return false;

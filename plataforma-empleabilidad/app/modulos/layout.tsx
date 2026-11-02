@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
+import BotonCerrarSesion from '@/components/BotonCerrarSesion';
 
 export default function ModulosLayout({ children }: { children: ReactNode }) {
   return (
@@ -40,6 +41,7 @@ export default function ModulosLayout({ children }: { children: ReactNode }) {
                 A
               </div>
             </div>
+            <BotonCerrarSesion className="ml-2 text-sm font-semibold text-[#42474f] hover:text-[#002546] hover:bg-[#f1f4f6] border border-[#c3c6d0] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60" />
           </div>
         </div>
       </header>
