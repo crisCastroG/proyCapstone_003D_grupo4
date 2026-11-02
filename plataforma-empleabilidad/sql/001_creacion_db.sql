@@ -439,16 +439,11 @@ CREATE INDEX progreso_contenido_idx ON public.progreso_contenido (contenido_id_c
 
 INSERT INTO public.rol_usuario (nombre_rol)
 VALUES
+('superadministrador'),
 ('administrador'),
 ('usuario');
 
 COMMIT;
 
--- Admin para testeo
-INSERT INTO public.usuario (email, password, rol)
-VALUES (
-  'admin@test.com',
-  '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW', -- Hash de admin123
-  'superadmin'
-)
+
 ON CONFLICT (email) DO NOTHING;
