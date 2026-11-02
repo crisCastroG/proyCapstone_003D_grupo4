@@ -10,7 +10,7 @@
 }
 
 .panel {
-  width: min(100%, 460px);
+  width: min(100%, 600px);
   padding: 40px;
   border: 1px solid color-mix(in srgb, var(--brand-navy) 10%, white);
   border-radius: 8px;

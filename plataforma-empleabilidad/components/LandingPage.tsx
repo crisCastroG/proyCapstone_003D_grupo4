@@ -14,18 +14,6 @@ const plans = [
     action: "Elegir Básico",
   },
   {
-    name: "Pro",
-    price: "$99",
-    featured: true,
-    features: [
-      { label: "Todo lo del Plan Básico", included: true },
-      { label: "Generación de Perfil Digital QR", included: true },
-      { label: "Una sesión de simulación de entrevista", included: true },
-      { label: "Seguimiento personalizado", included: false },
-    ],
-    action: "Comenzar Pro",
-  },
-  {
     name: "Premium",
     price: "$199",
     featured: false,
@@ -69,7 +57,11 @@ export default function LandingPage() {
     <div className={styles.page} id="inicio">
       <header className={styles.header}>
         <nav className={styles.nav} aria-label="Navegación principal">
-          <Link className={styles.brand} href="#inicio" aria-label="Empleamás, inicio">
+          <Link
+            className={styles.brand}
+            href="#inicio"
+            aria-label="Empleamás, inicio"
+          >
             emplea<span>más</span>
           </Link>
           <div className={styles.navLinks}>
@@ -103,7 +95,9 @@ export default function LandingPage() {
                   Conoce el proceso
                 </a>
               </div>
-              <p className={styles.heroNote}>Un camino claro hacia tu siguiente oportunidad.</p>
+              <p className={styles.heroNote}>
+                Un camino claro hacia tu siguiente oportunidad.
+              </p>
             </div>
             <div
               className={styles.heroPhoto}
@@ -116,20 +110,26 @@ export default function LandingPage() {
           </a>
         </section>
 
-        <section className={styles.process} id="como-funciona" aria-labelledby="process-title">
+        <section
+          className={styles.process}
+          id="como-funciona"
+          aria-labelledby="process-title"
+        >
           <div className={styles.sectionHeading}>
             <p className={styles.eyebrow}>Un plan que avanza contigo</p>
             <h2 id="process-title">De la búsqueda a tu próximo paso.</h2>
             <p>
-              Un proceso estructurado en tres etapas para fortalecer tu perfil
-              y abrir nuevas oportunidades profesionales.
+              Un proceso estructurado en tres etapas para fortalecer tu perfil y
+              abrir nuevas oportunidades profesionales.
             </p>
           </div>
           <div className={styles.steps}>
             {steps.map((step) => (
               <article className={styles.step} key={step.number}>
                 <div className={styles.stepTop}>
-                  <span className={styles.stepIcon} aria-hidden="true">{step.icon}</span>
+                  <span className={styles.stepIcon} aria-hidden="true">
+                    {step.icon}
+                  </span>
                   <span className={styles.stepNumber}>{step.number}</span>
                 </div>
                 <h3>{step.title}</h3>
@@ -139,55 +139,38 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className={styles.pricing} id="planes" aria-labelledby="pricing-title">
+        <section
+          className={styles.pricing}
+          id="planes"
+          aria-labelledby="pricing-title"
+        >
           <div className={styles.pricingHeading}>
             <div className={styles.sectionHeading}>
               <p className={styles.eyebrow}>Invierte en tu futuro</p>
               <h2 id="pricing-title">El impulso que necesitas.</h2>
             </div>
-            <p>Elige el acompañamiento que mejor se adapta a tu búsqueda laboral.</p>
           </div>
           <div className={styles.planGrid}>
-            {plans.map((plan) => (
-              <article
-                className={`${styles.plan} ${plan.featured ? styles.featuredPlan : ""}`}
-                key={plan.name}
-              >
-                {plan.featured && <p className={styles.recommended}>Más elegido</p>}
-                <div className={styles.planTitle}>
-                  <h3>{plan.name}</h3>
-                  <p>Plan anual</p>
-                </div>
-                <p className={styles.planPrice}>
-                  {plan.price}<span> / año</span>
-                </p>
-                <ul className={styles.featureList}>
-                  {plan.features.map((feature) => (
-                    <li className={feature.included ? "" : styles.unavailable} key={feature.label}>
-                      <span aria-hidden="true">{feature.included ? "✓" : "−"}</span>
-                      {feature.label}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  className={plan.featured ? styles.planButtonPrimary : styles.planButton}
-                  href="/planes"
-                >
-                  {plan.action} <span aria-hidden="true">→</span>
-                </Link>
-              </article>
-            ))}
+            <a className={styles.primaryButton} href="/planes">
+              Ver planes <span aria-hidden="true">→</span>
+            </a>
           </div>
           <p className={styles.pricingFootnote}>
             Todos los planes incluyen acceso seguro a tu espacio personal.
           </p>
         </section>
 
-        <section className={styles.stories} id="historias" aria-labelledby="stories-title">
+        <section
+          className={styles.stories}
+          id="historias"
+          aria-labelledby="stories-title"
+        >
           <div className={styles.companyRow}>
             <p>Talento que hoy forma parte de equipos como</p>
             <div className={styles.companyNames}>
-              {companies.map((company) => <span key={company}>{company}</span>)}
+              {companies.map((company) => (
+                <span key={company}>{company}</span>
+              ))}
             </div>
           </div>
           <div className={styles.storiesHeading}>
@@ -195,7 +178,10 @@ export default function LandingPage() {
               <p className={styles.eyebrow}>Historias de avance</p>
               <h2 id="stories-title">El próximo logro puede ser tuyo.</h2>
             </div>
-            <p>Personas que encontraron claridad, confianza y un nuevo rumbo profesional.</p>
+            <p>
+              Personas que encontraron claridad, confianza y un nuevo rumbo
+              profesional.
+            </p>
           </div>
           <div className={styles.testimonials}>
             <figure className={styles.testimonial}>
@@ -205,7 +191,10 @@ export default function LandingPage() {
                   role="img"
                   aria-label="Retrato de Laura"
                 />
-                <figcaption><strong>Laura M.</strong><span>Analista de datos</span></figcaption>
+                <figcaption>
+                  <strong>Laura M.</strong>
+                  <span>Analista de datos</span>
+                </figcaption>
               </div>
               <blockquote>
                 “La simulación de entrevista me dio la confianza que necesitaba.
@@ -219,7 +208,10 @@ export default function LandingPage() {
                   role="img"
                   aria-label="Retrato de Carlos"
                 />
-                <figcaption><strong>Carlos R.</strong><span>Project manager</span></figcaption>
+                <figcaption>
+                  <strong>Carlos R.</strong>
+                  <span>Project manager</span>
+                </figcaption>
               </div>
               <blockquote>
                 “El acompañamiento marcó la diferencia. Mejoré mi perfil y
@@ -232,7 +224,9 @@ export default function LandingPage() {
 
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
-          <Link className={styles.footerBrand} href="#inicio">emplea<span>más</span></Link>
+          <Link className={styles.footerBrand} href="#inicio">
+            emplea<span>más</span>
+          </Link>
           <p>© 2026 Empleamás. Asesorías laborales que impulsan tu futuro.</p>
           <nav aria-label="Enlaces legales">
             <a href="mailto:hola@empleamas.com">Contacto</a>

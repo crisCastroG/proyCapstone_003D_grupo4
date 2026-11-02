@@ -43,11 +43,7 @@ export async function POST(request: Request) {
     }
 
     const usuario = result.rows[0];
-<<<<<<< HEAD
 
-
-=======
->>>>>>> 838c3d75262df438f22c79b98c1593ba05f8fd39
     if (usuario.estado_usuario !== 'activo') {
       return NextResponse.json(
         { error: 'Esta cuenta se encuentra desactivada.' },

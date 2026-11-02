@@ -23,7 +23,8 @@ export default async function LoginPage({ searchParams }: Props) {
 						<span className={styles.logo} role="img" aria-label="Empleamás, asesorías laborales que impulsan tu futuro" />
 					</Link>
 					<div>
-						<h1 id="login-title">Bienvenido a Empleamás</h1>
+						<h1 id="login-title">Bienvenido a <a href="/#inicio">Empleamás</a></h1>
+						{/* se dejó empleamás como link mientras no esté el logo oficial */}
 						<p>Accede a tu panel de gestión laboral.</p>
 					</div>
 				</header>
