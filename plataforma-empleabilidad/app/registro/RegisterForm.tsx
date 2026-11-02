@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { formatearRut, validarRutChileno } from '@/lib/validators';
 
 const PROFESIONES_LISTA = [
   'Ingeniero/a Civil Informático/a',
@@ -51,128 +50,105 @@ const AREAS_LISTA = [
   'Sector Público y Políticas Públicas',
 ];
 
-const REGIONES_Y_CIUDADES: Record<string, string[]> = {
-  'Región de Arica y Parinacota': ['Arica', 'Putre', 'Camarones', 'General Lagos'],
-  'Región de Tarapacá': ['Iquique', 'Alto Hospicio', 'Pozo Almonte', 'Pica', 'Huara'],
-  'Región de Antofagasta': ['Antofagasta', 'Calama', 'Tocopilla', 'Mejillones', 'Taltal', 'San Pedro de Atacama'],
-  'Región de Atacama': ['Copiapó', 'Vallenar', 'Caldera', 'Chañaral', 'Diego de Almagro', 'Huasco'],
-  'Región de Coquimbo': ['La Serena', 'Coquimbo', 'Ovalle', 'Illapel', 'Vicuña', 'Los Vilos', 'Salamanca'],
-  'Región de Valparaíso': [
-    'Valparaíso',
-    'Viña del Mar',
-    'Quilpué',
-    'Villa Alemana',
-    'Concón',
-    'San Antonio',
-    'Quillota',
-    'Los Andes',
-    'San Felipe',
-    'La Ligua',
-    'Limache',
-  ],
-  'Región Metropolitana de Santiago': [
-    'Santiago',
-    'Providencia',
-    'Las Condes',
-    'Ñuñoa',
-    'Maipú',
-    'Puente Alto',
-    'La Florida',
-    'San Bernardo',
-    'Vitacura',
-    'Lo Barnechea',
-    'Peñalolén',
-    'Macul',
-    'San Miguel',
-    'Estación Central',
-    'Quilicura',
-    'Pudahuel',
-    'Recoleta',
-    'Independencia',
-    'Colina',
-    'Melipilla',
-    'Talagante',
-    'Buin',
-    'Paine',
-  ],
-  "Región del Libertador General Bernardo O'Higgins": [
-    'Rancagua',
-    'Machalí',
-    'San Fernando',
-    'Rengo',
-    'Pichilemu',
-    'Santa Cruz',
-    'San Vicente',
-    'Graneros',
-  ],
-  'Región del Maule': ['Talca', 'Curicó', 'Linares', 'Cauquenes', 'Constitución', 'Molina', 'Parral', 'San Javier'],
-  'Región de Ñuble': ['Chillán', 'Chillán Viejo', 'San Carlos', 'Bulnes', 'Quirihue', 'Yungay', 'Coihueco'],
-  'Región del Biobío': [
-    'Concepción',
-    'Talcahuano',
-    'Chiguayante',
-    'San Pedro de la Paz',
-    'Hualpén',
-    'Coronel',
-    'Lota',
-    'Tomé',
-    'Penco',
-    'Santa Juana',
-    'Hualqui',
-    'Los Ángeles',
-    'Cabrero',
-    'Nacimiento',
-    'Mulchén',
-    'Lebu',
-    'Arauco',
-    'Curanilahue',
-    'Cañete',
-  ],
-  'Región de La Araucanía': [
-    'Temuco',
-    'Padre Las Casas',
-    'Villarrica',
-    'Pucón',
-    'Angol',
-    'Victoria',
-    'Lautaro',
-    'Nueva Imperial',
-  ],
-  'Región de Los Ríos': ['Valdivia', 'La Unión', 'Río Bueno', 'Panguipulli', 'Los Lagos', 'Paillaco', 'Mariquina'],
-  'Región de Los Lagos': [
-    'Puerto Montt',
-    'Osorno',
-    'Puerto Varas',
-    'Castro',
-    'Ancud',
-    'Quellón',
-    'Frutillar',
-    'Llanquihue',
-    'Calbuco',
-  ],
-  'Región de Aysén del General Carlos Ibáñez del Campo': [
-    'Coyhaique',
-    'Puerto Aysén',
-    'Chile Chico',
-    'Cochrane',
-    'Cisnes',
-  ],
-  'Región de Magallanes y de la Antártica Chilena': [
-    'Punta Arenas',
-    'Puerto Natales',
-    'Porvenir',
-    'Cabo de Hornos (Puerto Williams)',
-  ],
-};
+// Cada región contiene su propio arreglo de ciudades
+const DATOS_CHILE = [
+  {
+    region: 'Región de Arica y Parinacota',
+    ciudades: ['Arica', 'Putre', 'Camarones', 'General Lagos'],
+  },
+  {
+    region: 'Región de Tarapacá',
+    ciudades: ['Iquique', 'Alto Hospicio', 'Pozo Almonte', 'Pica', 'Huara'],
+  },
+  {
+    region: 'Región de Antofagasta',
+    ciudades: ['Antofagasta', 'Calama', 'Tocopilla', 'Mejillones', 'Taltal', 'San Pedro de Atacama'],
+  },
+  {
+    region: 'Región de Atacama',
+    ciudades: ['Copiapó', 'Vallenar', 'Caldera', 'Chañaral', 'Diego de Almagro', 'Huasco'],
+  },
+  {
+    region: 'Región de Coquimbo',
+    ciudades: ['La Serena', 'Coquimbo', 'Ovalle', 'Illapel', 'Vicuña', 'Los Vilos', 'Salamanca'],
+  },
+  {
+    region: 'Región de Valparaíso',
+    ciudades: ['Valparaíso', 'Viña del Mar', 'Quilpué', 'Villa Alemana', 'Concón', 'San Antonio', 'Quillota', 'Los Andes', 'San Felipe'],
+  },
+  {
+    region: 'Región Metropolitana de Santiago',
+    ciudades: ['Santiago', 'Providencia', 'Las Condes', 'Ñuñoa', 'Maipú', 'Puente Alto', 'La Florida', 'San Bernardo', 'Quilicura', 'Pudahuel', 'Colina', 'Melipilla', 'Talagante'],
+  },
+  {
+    region: "Región del Libertador General Bernardo O'Higgins",
+    ciudades: ['Rancagua', 'Machalí', 'San Fernando', 'Rengo', 'Pichilemu', 'Santa Cruz', 'San Vicente'],
+  },
+  {
+    region: 'Región del Maule',
+    ciudades: ['Talca', 'Curicó', 'Linares', 'Cauquenes', 'Constitución', 'Molina', 'Parral'],
+  },
+  {
+    region: 'Región de Ñuble',
+    ciudades: ['Chillán', 'Chillán Viejo', 'San Carlos', 'Bulnes', 'Quirihue', 'Yungay', 'Coihueco'],
+  },
+  {
+    region: 'Región del Biobío',
+    ciudades: ['Concepción', 'Talcahuano', 'Hualpén', 'Chiguayante', 'San Pedro de la Paz', 'Coronel', 'Lota', 'Tomé', 'Penco', 'Los Ángeles', 'Lebu', 'Arauco', 'Cañete'],
+  },
+  {
+    region: 'Región de La Araucanía',
+    ciudades: ['Temuco', 'Padre Las Casas', 'Villarrica', 'Pucón', 'Angol', 'Victoria', 'Lautaro'],
+  },
+  {
+    region: 'Región de Los Ríos',
+    ciudades: ['Valdivia', 'La Unión', 'Río Bueno', 'Panguipulli', 'Los Lagos', 'Paillaco'],
+  },
+  {
+    region: 'Región de Los Lagos',
+    ciudades: ['Puerto Montt', 'Osorno', 'Puerto Varas', 'Castro', 'Ancud', 'Quellón', 'Frutillar'],
+  },
+  {
+    region: 'Región de Aysén del General Carlos Ibáñez del Campo',
+    ciudades: ['Coyhaique', 'Puerto Aysén', 'Chile Chico', 'Cochrane'],
+  },
+  {
+    region: 'Región de Magallanes y de la Antártica Chilena',
+    ciudades: ['Punta Arenas', 'Puerto Natales', 'Porvenir', 'Cabo de Hornos'],
+  },
+];
 
-const LISTA_REGIONES = Object.keys(REGIONES_Y_CIUDADES);
+
+function autoFormatearRun(valor: string): string {
+  // Quitamos todo lo que no sea número o letra K
+  const limpio = valor.replace(/[^0-9kK]/g, '').toUpperCase().slice(0, 9);
+  if (limpio.length <= 1) return limpio;
+  const cuerpo = limpio.slice(0, -1);
+  const dv = limpio.slice(-1);
+  return `${cuerpo}-${dv}`;
+}
+
+
+function esRunChilenoValido(run: string): boolean {
+  const limpio = run.replace(/[^0-9kK]/g, '').toUpperCase();
+  if (limpio.length < 8 || limpio.length > 9) return false;
+  const cuerpo = limpio.slice(0, -1);
+  const dvIngresado = limpio.slice(-1);
+  if (!/^\d+$/.test(cuerpo)) return false;
+
+  let suma = 0;
+  let multiplo = 2;
+  for (let i = cuerpo.length - 1; i >= 0; i--) {
+    suma += parseInt(cuerpo.charAt(i), 10) * multiplo;
+    multiplo = multiplo < 7 ? multiplo + 1 : 2;
+  }
+  const dvEsperado = 11 - (suma % 11);
+  const dvCalculado = dvEsperado === 11 ? '0' : dvEsperado === 10 ? 'K' : dvEsperado.toString();
+  return dvIngresado === dvCalculado;
+}
 
 export default function RegisterForm() {
   const router = useRouter();
-
-  // Estados dedicados y directos para Región y Ciudad (imposible que queden bloqueados)
-  const [regionActual, setRegionActual] = useState<string>('Región del Biobío');
-  const [ciudadActual, setCiudadActual] = useState<string>('Concepción');
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -183,44 +159,59 @@ export default function RegisterForm() {
     genero: 'Masculino',
     telefono: '',
     correo: '',
-    profesion_nombre: PROFESIONES_LISTA[0],
-    area_nombre: AREAS_LISTA[0],
+    profesion_nombre: '',
+    area_nombre: '',
+    region_nombre: '',
+    ciudad_nombre: '',
     password: '',
   });
 
+
+  const [ciudadesDisponibles, setCiudadesDisponibles] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
-
-  const ciudadesDeLaRegion = REGIONES_Y_CIUDADES[regionActual] || [];
 
   const tieneMin8 = formData.password.length >= 8;
   const tieneMayuscula = /[A-Z]/.test(formData.password);
   const tieneMinuscula = /[a-z]/.test(formData.password);
   const tieneNumero = /[0-9]/.test(formData.password);
-  const runEsValido = formData.run.length > 7 ? validarRutChileno(formData.run) : null;
+  const runEsValido = formData.run.length >= 9 ? esRunChilenoValido(formData.run) : null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (name === 'run') {
-      setFormData((prev) => ({ ...prev, run: formatearRut(value) }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+
+  const handleRunChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const runConGuion = autoFormatearRun(e.target.value);
+    setFormData((prev) => ({ ...prev, run: runConGuion }));
+  };
+
+ 
   const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const nuevaRegion = e.target.value;
-    setRegionActual(nuevaRegion);
-    const listaCiudades = REGIONES_Y_CIUDADES[nuevaRegion] || [];
-    setCiudadActual(listaCiudades[0] || '');
+    const nombreRegionElegida = e.target.value;
+    const encontrada = DATOS_CHILE.find((item) => item.region === nombreRegionElegida);
+
+    setCiudadesDisponibles(encontrada ? encontrada.ciudades : []);
+    setFormData((prev) => ({
+      ...prev,
+      region_nombre: nombreRegionElegida,
+      ciudad_nombre: '',
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!validarRutChileno(formData.run)) {
+    if (!esRunChilenoValido(formData.run)) {
       setError('Por favor ingresa un RUN chileno válido.');
+      return;
+    }
+
+    if (!formData.profesion_nombre || !formData.area_nombre || !formData.region_nombre || !formData.ciudad_nombre) {
+      setError('Por favor selecciona tu profesión, área de trabajo, región y ciudad.');
       return;
     }
 
@@ -236,8 +227,6 @@ export default function RegisterForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          region_nombre: regionActual,
-          ciudad_nombre: ciudadActual,
           profesion_id_profesion: 1,
           area_de_trabajo_id_area: 1,
           ciudad_id_ciudad: 1,
@@ -300,9 +289,9 @@ export default function RegisterForm() {
                 name="run"
                 required
                 placeholder="11111111-3"
-                maxLength={12}
+                maxLength={10}
                 value={formData.run}
-                onChange={handleChange}
+                onChange={handleRunChange}
                 style={{
                   width: '100%',
                   padding: '0.7rem',
@@ -348,8 +337,9 @@ export default function RegisterForm() {
                 required
                 value={formData.profesion_nombre}
                 onChange={handleChange}
-                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF' }}
+                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF', cursor: 'pointer' }}
               >
+                <option value="">Selecciona tu profesión</option>
                 {PROFESIONES_LISTA.map((prof) => (
                   <option key={prof} value={prof}>
                     {prof}
@@ -365,8 +355,9 @@ export default function RegisterForm() {
                 required
                 value={formData.area_nombre}
                 onChange={handleChange}
-                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF' }}
+                style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF', cursor: 'pointer' }}
               >
+                <option value="">Selecciona tu área de trabajo</option>
                 {AREAS_LISTA.map((area) => (
                   <option key={area} value={area}>
                     {area}
@@ -376,18 +367,21 @@ export default function RegisterForm() {
             </div>
           </div>
 
-          {/* Región y Ciudad / Comuna (SIEMPRE DESBLOQUEADO Y DINÁMICO) */}
+          {/* Región y Ciudad / Comuna */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
             <div>
               <label style={{ display: 'block', color: '#0D3B66', fontWeight: 600, marginBottom: '0.3rem', fontSize: '0.85rem' }}>Región *</label>
               <select
-                value={regionActual}
+                name="region_nombre"
+                required
+                value={formData.region_nombre}
                 onChange={handleRegionChange}
                 style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF', cursor: 'pointer' }}
               >
-                {LISTA_REGIONES.map((reg) => (
-                  <option key={reg} value={reg}>
-                    {reg}
+                <option value="">Selecciona tu región</option>
+                {DATOS_CHILE.map((item) => (
+                  <option key={item.region} value={item.region}>
+                    {item.region}
                   </option>
                 ))}
               </select>
@@ -396,11 +390,14 @@ export default function RegisterForm() {
             <div>
               <label style={{ display: 'block', color: '#0D3B66', fontWeight: 600, marginBottom: '0.3rem', fontSize: '0.85rem' }}>Ciudad / Comuna *</label>
               <select
-                value={ciudadActual}
-                onChange={(e) => setCiudadActual(e.target.value)}
+                name="ciudad_nombre"
+                required
+                value={formData.ciudad_nombre}
+                onChange={handleChange}
                 style={{ width: '100%', padding: '0.7rem', borderRadius: '8px', border: '1px solid #CBD5E1', backgroundColor: '#FFF', cursor: 'pointer' }}
               >
-                {ciudadesDeLaRegion.map((ciudad) => (
+                <option value="">Selecciona tu ciudad</option>
+                {ciudadesDisponibles.map((ciudad) => (
                   <option key={ciudad} value={ciudad}>
                     {ciudad}
                   </option>
