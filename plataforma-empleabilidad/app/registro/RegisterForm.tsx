@@ -147,7 +147,8 @@ function esRunChilenoValido(run: string): boolean {
   return dvIngresado === dvCalculado;
 }
 
-export default function RegisterForm() {
+// `next` es la ruta a la que volver después del registro (ya validada en page.tsx).
+export default function RegisterForm({ next }: { next?: string }) {
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -241,7 +242,7 @@ export default function RegisterForm() {
         return;
       }
 
-      router.push(data.redirectUrl || '/modulos');
+      router.push(next ?? (data.redirectUrl || '/modulos'));
       router.refresh();
     } catch {
       setError('Error de conexión con el servidor.');
@@ -440,7 +441,7 @@ export default function RegisterForm() {
 
         <p style={{ textAlign: 'center', marginTop: '1.2rem', fontSize: '0.9rem', color: '#475569' }}>
           ¿Ya tienes cuenta?{' '}
-          <Link href="/inicio_sesion" style={{ color: '#2566A8', fontWeight: 600 }}>
+          <Link href={next ? `/inicio_sesion?next=${encodeURIComponent(next)}` : '/inicio_sesion'} style={{ color: '#2566A8', fontWeight: 600 }}>
             Inicia sesión
           </Link>
         </p>

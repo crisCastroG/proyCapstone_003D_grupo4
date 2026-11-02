@@ -28,6 +28,9 @@ export default function ModulosLayout({ children }: { children: ReactNode }) {
             <a href="#" className="text-[#42474f] hover:text-[#002546] transition-colors">
               Recursos
             </a>
+            <Link href="/planes" className="text-[#42474f] hover:text-[#002546] transition-colors">
+              Planes
+            </Link>
             <Link href="/admin/modulos" className="text-[#006689] font-bold hover:underline">
               Ir al Admin 🛠️
             </Link>

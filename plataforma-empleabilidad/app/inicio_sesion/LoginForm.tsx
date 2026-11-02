@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export default function LoginForm() {
+// `next` es la ruta a la que volver después del login (ya validada en page.tsx).
+export default function LoginForm({ next }: { next?: string }) {
   const router = useRouter();
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
@@ -36,7 +37,7 @@ export default function LoginForm() {
       }
 
       // Redirige según el rol devuelto por el servidor (/dashboard o /admin)
-      router.push(data.redirectUrl);
+      router.push(next ?? data.redirectUrl);
       router.refresh();
     } catch {
       setError('No se pudo conectar con el servidor.');
@@ -174,7 +175,7 @@ export default function LoginForm() {
 
         <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: '#475569' }}>
           ¿Aún no tienes cuenta?{' '}
-          <Link href="/registro" style={{ color: '#2566A8', fontWeight: 600 }}>
+          <Link href={next ? `/registro?next=${encodeURIComponent(next)}` : '/registro'} style={{ color: '#2566A8', fontWeight: 600 }}>
             Regístrate aquí
           </Link>
         </p>

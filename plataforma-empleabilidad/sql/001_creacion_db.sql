@@ -444,6 +444,3 @@ VALUES
 ('usuario');
 
 COMMIT;
-
-
-ON CONFLICT (email) DO NOTHING;

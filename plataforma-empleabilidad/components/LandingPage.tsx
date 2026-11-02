@@ -74,7 +74,7 @@ export default function LandingPage() {
           </Link>
           <div className={styles.navLinks}>
             <a href="#como-funciona">Cómo funciona</a>
-            <a href="#planes">Planes</a>
+            <Link href="/planes">Planes</Link>
             <a href="#historias">Historias</a>
           </div>
           <Link className={styles.loginLink} href="/inicio_sesion">
@@ -171,7 +171,7 @@ export default function LandingPage() {
                 </ul>
                 <Link
                   className={plan.featured ? styles.planButtonPrimary : styles.planButton}
-                  href="/inicio_sesion"
+                  href="/planes"
                 >
                   {plan.action} <span aria-hidden="true">→</span>
                 </Link>
