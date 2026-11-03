@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { obtenerSesionActual } from '@/lib/auth';
+import {tienePlanActivo} from '@/lib/suscripcion';
 
 export async function GET() {
     try {
@@ -8,8 +9,10 @@ export async function GET() {
         if (!sesion) {
             return NextResponse.json({ error: 'Usuario no autenticado' }, { status: 401 });
         }
-
+        
         const idUsuario = sesion.id_usuario ?? (sesion as any).id;
+        const esPro = await tienePlanActivo(idUsuario);
+
 
         const resultLecciones = await query(
             `SELECT 
@@ -22,6 +25,7 @@ export async function GET() {
     c.estado_contenido,
     m.id_modulo,
     m.titulo_modulo AS modulo_titulo,
+    m.es_gratuito AS modulo_gratuito,
     m.posicion_modulo AS modulo_posicion,
     COALESCE(p.estado_progreso, 'no_completado') AS estado
    FROM public.contenido c
@@ -41,12 +45,13 @@ export async function GET() {
         const leccionesProcesadasMap = new Map<number, any>();
 
         for (const leccion of leccionesRaw) {
-            const estaBloqueada = !disponible;
-
+            const requierePro = !esPro && !leccion.modulo_gratuito;
+            const estaBloqueada = !disponible || requierePro;
             leccionesProcesadasMap.set(leccion.id_contenido, {
                 ...leccion,
                 bloqueado: estaBloqueada,
-            });
+                requierePro,
+        });
 
             if (estaBloqueada || leccion.estado !== 'completado') {
                 disponible = false;
@@ -59,7 +64,8 @@ export async function GET() {
         titulo_modulo AS titulo,
         descripcion_modulo AS descripcion,
         posicion_modulo AS posicion,
-        esta_publicado
+        esta_publicado,
+        es_gratuito
        FROM public.modulo
        ORDER BY posicion_modulo ASC`
         );
@@ -88,6 +94,7 @@ export async function GET() {
                 contenidos: contenidosDelModulo,
                 totalContenidos: contenidosDelModulo.length,
                 contenidosCompletados: completadosEnModulo,
+                requierePro: !esPro && !mod.es_gratuito,
             };
         });
 

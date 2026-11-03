@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { obtenerSesionActual } from '@/lib/auth';
+import {tienePlanActivo} from '@/lib/suscripcion';
 
 export async function GET(
     request: Request,
@@ -16,7 +17,7 @@ export async function GET(
         const rawId = resolvedParams?.id_contenido;
         const idContenido = parseInt(rawId, 10);
         const idUsuario = sesion.id_usuario ?? (sesion as any).id;
-
+        const esPro = await tienePlanActivo(idUsuario);
         if (!rawId || isNaN(idContenido) || !idUsuario) {
             return NextResponse.json({ error: 'Parámetros inválidos.' }, { status: 400 });
         }
@@ -28,6 +29,7 @@ export async function GET(
         c.titulo_contenido AS titulo,
         c.orden_contenido AS orden,
         m.posicion_modulo,
+        m.es_gratuito AS modulo_gratuito,
         COALESCE(p.estado_progreso, 'no_iniciado') AS estado
        FROM public.contenido c
        JOIN public.modulo m ON c.modulo_id_modulo = m.id_modulo
@@ -42,11 +44,12 @@ export async function GET(
 
         let disponible = true;
         const leccionesConBloqueo = todasLecciones.map((leccion) => {
-            const estaBloqueada = !disponible;
+            const requierePro = !esPro && !leccion.modulo_gratuito;
+            const estaBloqueada = !disponible || requierePro;
             if (estaBloqueada || leccion.estado !== 'completado') {
                 disponible = false;
             }
-            return { ...leccion, bloqueado: estaBloqueada };
+            return { ...leccion, bloqueado: estaBloqueada, requierePro };
         });
 
         const indexActual = leccionesConBloqueo.findIndex((l) => l.id_contenido === idContenido);
@@ -55,6 +58,13 @@ export async function GET(
         }
 
         const leccionActualSecuencia = leccionesConBloqueo[indexActual];
+
+        if(leccionActualSecuencia.requierePro) {
+            return NextResponse.json(
+                { error: 'Esta lección requiere una suscripción Pro para acceder.' },
+                { status: 403 }
+            );
+        }
 
         if (leccionActualSecuencia.bloqueado) {
             return NextResponse.json(

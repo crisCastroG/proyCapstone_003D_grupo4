@@ -14,7 +14,7 @@ VALUE IN ('aprobado', 'pendiente', 'rechazado', 'reembolsado')
 );
 
 CREATE DOMAIN public.estado_progreso AS VARCHAR(20)
-CHECK (VALUE IN ('no_completado', 'completado'));
+CHECK (VALUE IN ('no_iniciado', 'completado'));
 
 CREATE DOMAIN public.estado_usuario AS VARCHAR(20)
 CHECK (VALUE IN ('activo', 'desactivado'));
