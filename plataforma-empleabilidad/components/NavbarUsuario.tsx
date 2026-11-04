@@ -68,12 +68,13 @@ export default function NavbarUsuario({
         </nav>
 
         <div className="flex items-center gap-3">
-          <div
-            aria-hidden="true"
-            className="w-10 h-10 rounded-full bg-[#002546] text-white flex items-center justify-center font-bold text-sm"
-          >
+          <Link
+            href="/modulos/cuenta"
+            aria-label="Mi cuenta"
+            className="w-10 h-10 rounded-full bg-[#002546] text-white flex items-center justify-center font-bold text-sm hover:opacity-80 transition-opacity"
+>
             {sesion.nombre.charAt(0).toUpperCase()}
-          </div>
+          </Link>
           <BotonCerrarSesion className="ml-2 text-sm font-semibold text-[#42474f] hover:text-[#002546] hover:bg-[#f1f4f6] border border-[#c3c6d0] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60" />
         </div>
       </div>

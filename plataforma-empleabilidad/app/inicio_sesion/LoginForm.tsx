@@ -64,16 +64,6 @@ export default function LoginForm({ next }: { next?: string }) {
         //   border: "1px solid #E6F2FB",
         // }}
       >
-        <h1
-          style={{
-            color: "#0D3B66",
-            fontSize: "1.65rem",
-            fontWeight: 700,
-            marginBottom: "0.5rem",
-          }}
-        >
-          Bienvenido a Empleamás
-        </h1>
         <p
           style={{
             color: "#2566A8",

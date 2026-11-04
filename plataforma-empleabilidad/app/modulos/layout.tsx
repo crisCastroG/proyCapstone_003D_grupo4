@@ -36,11 +36,15 @@ export default function ModulosLayout({ children }: { children: ReactNode }) {
             <button aria-label="Ajustes" className="p-2 text-[#42474f] hover:bg-[#f1f4f6] rounded-full transition-colors">
               <span className="material-symbols-outlined text-xl">settings</span>
             </button>
-            <div className="w-10 h-10 rounded-full overflow-hidden border border-[#c3c6d0] cursor-pointer ml-1 hover:opacity-80 transition-opacity">
-              <div className="w-full h-full bg-[#002546] text-white flex items-center justify-center font-bold text-sm">
-                A
-              </div>
-            </div>
+            <Link
+              href="/modulos/cuenta"
+              aria-label="Mi cuenta"
+              className="w-10 h-10 rounded-full overflow-hidden border border-[#c3c6d0] cursor-pointer ml-1 hover:opacity-80 transition-opacity"
+>
+             <div className="w-full h-full bg-[#002546] text-white flex items-center justify-center font-bold text-sm">
+               A
+             </div>
+            </Link>
             <BotonCerrarSesion className="ml-2 text-sm font-semibold text-[#42474f] hover:text-[#002546] hover:bg-[#f1f4f6] border border-[#c3c6d0] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60" />
           </div>
         </div>
