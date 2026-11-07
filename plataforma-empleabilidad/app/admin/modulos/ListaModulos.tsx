@@ -3,8 +3,10 @@
 import { useState, useTransition } from 'react';
 import Link from 'next/link';
 import FormularioContenidoModal from './FormularioContenidoModal';
+import FormularioTestModal from './FormularioTestModal';
 import FormularioModulo from './FormularioModulo';
 import { eliminarContenidoAction } from './actions';
+import { eliminarEvaluacionAction } from './actionsTest';
 
 type Contenido = {
   id_contenido: number;
@@ -16,7 +18,18 @@ type Contenido = {
   modulo_id_modulo: number;
 };
 
-type ModuloConContenidos = {
+type Evaluacion = {
+  id_evaluacion: number;
+  titulo_evaluacion: string;
+  descripcion_evaluacion?: string;
+  porcentaje_minimo_aprobacion: number;
+  duracion_minutos: number;
+  orden_evaluacion: number;
+  estado_evaluacion: string;
+  modulo_id_modulo: number;
+};
+
+type ModuloCompleto = {
   id_modulo: number;
   titulo_modulo: string;
   descripcion_modulo?: string;
@@ -24,24 +37,35 @@ type ModuloConContenidos = {
   esta_publicado?: boolean;
   es_gratuito?: boolean;
   contenidos: Contenido[];
+  evaluaciones: Evaluacion[];
 };
 
-export default function ListaModulos({ modulos }: { modulos: ModuloConContenidos[] }) {
+export default function ListaModulos({ modulos }: { modulos: ModuloCompleto[] }) {
   const [openModuloId, setOpenModuloId] = useState<number | null>(null);
-  const [moduloEditar, setModuloEditar] = useState<ModuloConContenidos | null>(null);
+  const [moduloEditar, setModuloEditar] = useState<ModuloCompleto | null>(null);
+
   const [contenidoAEliminar, setContenidoAEliminar] = useState<Contenido | null>(null);
+  const [evaluacionAEliminar, setEvaluacionAEliminar] = useState<Evaluacion | null>(null);
+
   const [isPending, startTransition] = useTransition();
 
   const toggleModulo = (id: number) => {
     setOpenModuloId(openModuloId === id ? null : id);
   };
 
-  const handleConfirmarEliminacion = () => {
+  const handleConfirmarEliminarContenido = () => {
     if (!contenidoAEliminar) return;
-
     startTransition(async () => {
       await eliminarContenidoAction(contenidoAEliminar.id_contenido);
       setContenidoAEliminar(null);
+    });
+  };
+
+  const handleConfirmarEliminarEvaluacion = () => {
+    if (!evaluacionAEliminar) return;
+    startTransition(async () => {
+      await eliminarEvaluacionAction(evaluacionAEliminar.id_evaluacion);
+      setEvaluacionAEliminar(null);
     });
   };
 
@@ -65,13 +89,13 @@ export default function ListaModulos({ modulos }: { modulos: ModuloConContenidos
                 <span className="material-symbols-outlined text-xl">warning</span>
               </div>
               <div>
-                <h3 className="text-base font-bold text-[#002547]">¿Eliminar contenido?</h3>
+                <h3 className="text-base font-bold text-[#002547]">¿Eliminar lección?</h3>
                 <p className="text-xs text-[#737780]">Esta acción no se puede deshacer.</p>
               </div>
             </div>
 
             <p className="text-xs text-[#42474f] leading-relaxed">
-              ¿Estás seguro de que deseas eliminar <strong className="text-[#002547]">&quot;{contenidoAEliminar.titulo_contenido}&quot;</strong>? Se perderá el contenido y todo el progreso sensible asociado.
+              ¿Estás seguro de eliminar <strong className="text-[#002547]">&quot;{contenidoAEliminar.titulo_contenido}&quot;</strong>?
             </p>
 
             <div className="flex justify-end gap-2 pt-3 border-t border-[#c3c6d0]/30">
@@ -79,15 +103,54 @@ export default function ListaModulos({ modulos }: { modulos: ModuloConContenidos
                 type="button"
                 onClick={() => setContenidoAEliminar(null)}
                 disabled={isPending}
-                className="px-4 py-2 border border-[#c3c6d0] rounded-lg text-xs font-bold text-[#42474f] hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 border border-[#c3c6d0] rounded-lg text-xs font-bold text-[#42474f] hover:bg-gray-50"
               >
                 Cancelar
               </button>
               <button
                 type="button"
-                onClick={handleConfirmarEliminacion}
+                onClick={handleConfirmarEliminarContenido}
                 disabled={isPending}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold disabled:opacity-50"
+              >
+                {isPending ? 'Eliminando...' : 'Sí, eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {evaluacionAEliminar && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl border border-[#c3c6d0]/40 w-full max-w-md p-6 flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-xl">warning</span>
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-[#002547]">¿Eliminar evaluación/test?</h3>
+                <p className="text-xs text-[#737780]">Esta acción eliminará sus preguntas, opciones e intentos.</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#42474f] leading-relaxed">
+              ¿Estás seguro de eliminar el test <strong className="text-[#002547]">&quot;{evaluacionAEliminar.titulo_evaluacion}&quot;</strong>?
+            </p>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-[#c3c6d0]/30">
+              <button
+                type="button"
+                onClick={() => setEvaluacionAEliminar(null)}
+                disabled={isPending}
+                className="px-4 py-2 border border-[#c3c6d0] rounded-lg text-xs font-bold text-[#42474f] hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarEliminarEvaluacion}
+                disabled={isPending}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold disabled:opacity-50"
               >
                 {isPending ? 'Eliminando...' : 'Sí, eliminar'}
               </button>
@@ -98,12 +161,27 @@ export default function ListaModulos({ modulos }: { modulos: ModuloConContenidos
 
       {modulos.map((modulo) => {
         const isOpen = openModuloId === modulo.id_modulo;
+        const totalItems = modulo.contenidos.length + modulo.evaluaciones.length;
+
+        const itemsUnificados = [
+          ...modulo.contenidos.map((item) => ({
+            tipo: 'contenido' as const,
+            orden: item.orden_contenido,
+            data: item,
+          })),
+          ...modulo.evaluaciones.map((test) => ({
+            tipo: 'evaluacion' as const,
+            orden: test.orden_evaluacion,
+            data: test,
+          })),
+        ].sort((a, b) => a.orden - b.orden);
 
         return (
           <div
             key={modulo.id_modulo}
             className="bg-white rounded-xl border border-[#c3c6d0]/30 shadow-sm overflow-hidden"
           >
+            {/* Cabecera del módulo */}
             <div
               onClick={() => toggleModulo(modulo.id_modulo)}
               className="p-5 flex items-center justify-between cursor-pointer hover:bg-[#f7fafc] transition-colors select-none"
@@ -137,9 +215,17 @@ export default function ListaModulos({ modulos }: { modulos: ModuloConContenidos
                   <span className="material-symbols-outlined text-lg">edit</span>
                 </button>
 
-                <span className="text-xs font-bold text-[#006689] bg-[#e6f2fb] px-3 py-1 rounded-full">
-                  {modulo.contenidos.length} contenidos
-                </span>
+                {/* Badge con desglose de items */}
+                <div className="flex items-center gap-1.5 text-xs font-bold">
+                  <span className="bg-[#e6f2fb] text-[#006689] px-2.5 py-1 rounded-full">
+                    {modulo.contenidos.length} lecciones
+                  </span>
+                  {modulo.evaluaciones.length > 0 && (
+                    <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full">
+                      {modulo.evaluaciones.length} tests
+                    </span>
+                  )}
+                </div>
 
                 <span
                   className="material-symbols-outlined text-[#737780] transition-transform duration-200"
@@ -150,70 +236,134 @@ export default function ListaModulos({ modulos }: { modulos: ModuloConContenidos
               </div>
             </div>
 
+            {/* Contenido desplegado */}
             {isOpen && (
               <div className="border-t border-[#c3c6d0]/30 bg-[#f8fafc] p-5 flex flex-col gap-4">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-wrap justify-between items-center gap-2">
                   <h4 className="text-xs font-bold text-[#002547] uppercase tracking-wider">
-                    Contenidos
+                    Contenidos y Evaluaciones
                   </h4>
-                  <FormularioContenidoModal
-                    idModulo={modulo.id_modulo}
-                    siguienteOrden={modulo.contenidos.length + 1}
-                  />
+
+                  <div className="flex items-center gap-2">
+                    <FormularioTestModal
+                      idModulo={modulo.id_modulo}
+                      siguienteOrden={totalItems + 1}
+                    />
+                    <FormularioContenidoModal
+                      idModulo={modulo.id_modulo}
+                      siguienteOrden={totalItems + 1}
+                    />
+                  </div>
                 </div>
 
-                {modulo.contenidos.length === 0 ? (
+                {totalItems === 0 ? (
                   <div className="text-center py-6 border-2 border-dashed border-[#c3c6d0]/40 rounded-lg bg-white">
                     <p className="text-xs font-bold text-[#737780]">
-                      No hay contenidos guardados en este módulo.
+                      No hay lecciones ni evaluaciones guardadas en este módulo.
                     </p>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-2">
-                    {modulo.contenidos.map((item) => (
-                      <div
-                        key={item.id_contenido}
-                        className="flex items-center justify-between p-3.5 bg-white rounded-lg border border-[#c3c6d0]/30 hover:border-[#006689]/40 transition-colors"
-                      >
-                        {/* ENLACE DIRECTO AL EDITOR DE BLOQUES DE CONTENIDO */}
-                        <Link
-                          href={`/admin/modulos/${modulo.id_modulo}/contenidos/${item.id_contenido}`}
-                          className="flex items-center gap-3 flex-1 group cursor-pointer"
-                        >
-                          <div className="w-7 h-7 rounded-md bg-[#e6f2fb] text-[#006689] flex items-center justify-center font-extrabold text-xs">
-                            {item.orden_contenido}
-                          </div>
-                          <div>
-                            <h5 className="text-sm font-bold text-[#002547] group-hover:text-[#006689] transition-colors">
-                              {item.titulo_contenido}
-                            </h5>
-                            <div className="flex items-center gap-2 text-xs text-[#737780] mt-0.5">
-                              <span>{item.duracion_estimada} min</span>
-                              <span>•</span>
-                              <span className="capitalize font-semibold text-[#006689]">
-                                {item.estado_contenido}
-                              </span>
+                    {itemsUnificados.map((item) => {
+                      if (item.tipo === 'contenido') {
+                        const leccion = item.data;
+                        return (
+                          <div
+                            key={`c_${leccion.id_contenido}`}
+                            className="flex items-center justify-between p-3.5 bg-white rounded-lg border border-[#c3c6d0]/30 hover:border-[#006689]/40 transition-colors"
+                          >
+                            <Link
+                              href={`/admin/modulos/${modulo.id_modulo}/contenidos/${leccion.id_contenido}`}
+                              className="flex items-center gap-3 flex-1 group cursor-pointer"
+                            >
+                              <div className="w-7 h-7 rounded-md bg-[#e6f2fb] text-[#006689] flex items-center justify-center font-extrabold text-xs shrink-0">
+                                {leccion.orden_contenido}
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h5 className="text-sm font-bold text-[#002547] group-hover:text-[#006689] transition-colors">
+                                    {leccion.titulo_contenido}
+                                  </h5>
+                                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-[#e6f2fb] text-[#006689]">
+                                    Lección
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-[#737780] mt-0.5">
+                                  <span>{leccion.duracion_estimada} min</span>
+                                  <span>•</span>
+                                  <span className="capitalize font-semibold text-[#006689]">
+                                    {leccion.estado_contenido}
+                                  </span>
+                                </div>
+                              </div>
+                            </Link>
+
+                            <div className="flex items-center gap-1 ml-2 shrink-0">
+                              <FormularioContenidoModal
+                                idModulo={modulo.id_modulo}
+                                contenidoEditar={leccion}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setContenidoAEliminar(leccion)}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                                title="Eliminar lección"
+                              >
+                                <span className="material-symbols-outlined text-base">delete</span>
+                              </button>
                             </div>
                           </div>
-                        </Link>
+                        );
+                      }
 
-                        {/* ACCIONES: EDITAR METADATOS (LÁPIZ) Y ELIMINAR (PAPELERA) */}
-                        <div className="flex items-center gap-1 ml-2 shrink-0">
-                          <FormularioContenidoModal
-                            idModulo={modulo.id_modulo}
-                            contenidoEditar={item}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setContenidoAEliminar(item)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                            title="Eliminar contenido"
-                          >
-                            <span className="material-symbols-outlined text-base">delete</span>
-                          </button>
+                      const test = item.data;
+                      return (
+                        <div
+                          key={`t_${test.id_evaluacion}`}
+                          className="flex items-center justify-between p-3.5 bg-white rounded-lg border border-indigo-200 hover:border-indigo-400 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="w-7 h-7 rounded-md bg-indigo-50 text-indigo-700 flex items-center justify-center font-extrabold text-xs shrink-0">
+                              {test.orden_evaluacion}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h5 className="text-sm font-bold text-[#002547]">
+                                  {test.titulo_evaluacion}
+                                </h5>
+                                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
+                                  Test
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-xs text-[#737780] mt-0.5">
+                                <span>{test.duracion_minutos} min límite</span>
+                                <span>•</span>
+                                <span>Mínimo {test.porcentaje_minimo_aprobacion}% aprobación</span>
+                                <span>•</span>
+                                <span className="capitalize font-semibold text-indigo-700">
+                                  {test.estado_evaluacion}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1 ml-2 shrink-0">
+                            <FormularioTestModal
+                              idModulo={modulo.id_modulo}
+                              evaluacionEditar={test}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setEvaluacionAEliminar(test)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                              title="Eliminar evaluación"
+                            >
+                              <span className="material-symbols-outlined text-base">delete</span>
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

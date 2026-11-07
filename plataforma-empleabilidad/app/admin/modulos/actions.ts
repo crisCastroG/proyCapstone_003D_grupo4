@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { query } from '@/lib/db';
+import { eliminarArchivoStorage } from '@/lib/storage-helper';
 
 export async function crearModulo(data: FormData | any) {
   try {
@@ -23,6 +24,19 @@ export async function crearModulo(data: FormData | any) {
       posicion = Number(data.posicion_modulo) || 1;
       esGratuito = Boolean(data.es_gratuito);
       estaPublicado = Boolean(data.esta_publicado);
+    }
+
+    // Verifica si la posición del módulo ya está ocupada
+    const checkPosicion = await query(
+      `SELECT id_modulo FROM public.modulo WHERE posicion_modulo = $1`,
+      [posicion]
+    );
+
+    if (checkPosicion.rows && checkPosicion.rows.length > 0) {
+      return {
+        success: false,
+        message: `La posición #${posicion} ya está ocupada por otro módulo. Por favor elige una posición diferente.`,
+      };
     }
 
     await query(
@@ -72,6 +86,18 @@ export async function actualizarModulo(param1: any, param2?: any) {
       estaPublicado = Boolean(data.esta_publicado);
     }
 
+    const checkPosicion = await query(
+      `SELECT id_modulo FROM public.modulo WHERE posicion_modulo = $1 AND id_modulo != $2`,
+      [posicion, idModulo]
+    );
+
+    if (checkPosicion.rows && checkPosicion.rows.length > 0) {
+      return {
+        success: false,
+        message: `La posición #${posicion} ya está ocupada por otro módulo. Por favor elige una posición diferente.`,
+      };
+    }
+
     await query(
       `UPDATE public.modulo
        SET 
@@ -100,6 +126,22 @@ export async function crearContenidoAction(formData: FormData) {
     const orden = Number(formData.get('orden_contenido')) || 1;
     const duracion = Number(formData.get('duracion_estimada')) || 10;
     const estado = ((formData.get('estado_contenido') as string) || 'publicado').toLowerCase();
+
+    // Validar si el número de orden está ocupado en lecciones o evaluaciones del mismo módulo
+    const checkColision = await query(
+      `SELECT 'contenido' AS tipo FROM public.contenido WHERE modulo_id_modulo = $1 AND orden_contenido = $2
+       UNION ALL
+       SELECT 'evaluacion' AS tipo FROM public.evaluacion WHERE modulo_id_modulo = $1 AND orden_evaluacion = $2`,
+      [idModulo, orden]
+    );
+
+    if (checkColision.rows && checkColision.rows.length > 0) {
+      const ocupadoPor = checkColision.rows[0].tipo === 'evaluacion' ? 'una evaluación' : 'otra lección';
+      return {
+        success: false,
+        message: `El número de orden ${orden} ya está asignado a ${ocupadoPor} de este módulo.`,
+      };
+    }
 
     const insertSql = `
       INSERT INTO public.contenido (
@@ -144,6 +186,22 @@ export async function actualizarContenidoAction(formData: FormData) {
     const duracion = Number(formData.get('duracion_estimada'));
     const estado = ((formData.get('estado_contenido') as string) || 'publicado').toLowerCase();
 
+    // Validar si el número de orden está ocupado en lecciones o evaluaciones (excluyendo el contenido actual)
+    const checkColision = await query(
+      `SELECT 'contenido' AS tipo FROM public.contenido WHERE modulo_id_modulo = $1 AND orden_contenido = $2 AND id_contenido != $3
+       UNION ALL
+       SELECT 'evaluacion' AS tipo FROM public.evaluacion WHERE modulo_id_modulo = $1 AND orden_evaluacion = $2`,
+      [idModulo, orden, idContenido]
+    );
+
+    if (checkColision.rows && checkColision.rows.length > 0) {
+      const ocupadoPor = checkColision.rows[0].tipo === 'evaluacion' ? 'una evaluación' : 'otra lección';
+      return {
+        success: false,
+        message: `El número de orden ${orden} ya está asignado a ${ocupadoPor} de este módulo.`,
+      };
+    }
+
     const updateSql = `
       UPDATE public.contenido
       SET 
@@ -178,6 +236,15 @@ export async function actualizarContenidoAction(formData: FormData) {
 
 export async function eliminarContenidoAction(idContenido: number) {
   try {
+    const resUrls = await query(
+      `SELECT url_recurso FROM public.bloque_contenido 
+       WHERE contenido_id_contenido = $1 AND url_recurso IS NOT NULL;`,
+      [idContenido]
+    );
+
+    const archivosAEliminar = resUrls.rows.map((row) => row.url_recurso);
+    await Promise.all(archivosAEliminar.map((url) => eliminarArchivoStorage(url)));
+
     await query(`DELETE FROM public.progreso_contenido WHERE contenido_id_contenido = $1;`, [idContenido]);
     await query(
       `DELETE FROM public.recurso WHERE bloque_contenido_id_bloque IN (SELECT id_bloque FROM public.bloque_contenido WHERE contenido_id_contenido = $1);`,
@@ -196,6 +263,17 @@ export async function eliminarContenidoAction(idContenido: number) {
 
 export async function eliminarModulo(idModulo: number) {
   try {
+    const resUrls = await query(
+      `SELECT url_recurso FROM public.bloque_contenido 
+       WHERE contenido_id_contenido IN (
+         SELECT id_contenido FROM public.contenido WHERE modulo_id_modulo = $1
+       ) AND url_recurso IS NOT NULL;`,
+      [idModulo]
+    );
+
+    const archivosAEliminar = resUrls.rows.map((row) => row.url_recurso);
+    await Promise.all(archivosAEliminar.map((url) => eliminarArchivoStorage(url)));
+
     await query(
       `DELETE FROM public.recurso WHERE bloque_contenido_id_bloque IN (
          SELECT id_bloque FROM public.bloque_contenido WHERE contenido_id_contenido IN (
@@ -219,10 +297,7 @@ export async function eliminarModulo(idModulo: number) {
       [idModulo]
     );
 
-
     await query(`DELETE FROM public.contenido WHERE modulo_id_modulo = $1;`, [idModulo]);
-
-
     await query(`DELETE FROM public.modulo WHERE id_modulo = $1;`, [idModulo]);
 
     revalidatePath('/admin/modulos');

@@ -3,26 +3,14 @@
 import { revalidatePath } from 'next/cache';
 import { query } from '@/lib/db';
 import { BloqueContenido } from '@/lib/types/bloque';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
-
+import { guardarArchivoLocal, eliminarArchivoStorage } from '@/lib/storage-helper';
 
 async function obtenerUrlRecurso(formData: FormData): Promise<string | null> {
   const archivo = formData.get('archivo_subida') as File | null;
   const urlManual = (formData.get('url_recurso') as string) || null;
 
-  if (archivo && archivo.size > 0) {
-    const bytes = await archivo.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const nombreLimpio = archivo.name.replace(/[^a-zA-Z0-9.-]/g, '_');
-    const nombreUnico = `${Date.now()}_${nombreLimpio}`;
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads');
-
-    await mkdir(uploadDir, { recursive: true });
-    await writeFile(path.join(uploadDir, nombreUnico), buffer);
-
-    return `/uploads/${nombreUnico}`;
+  if (archivo && archivo.size > 0 && archivo.name !== 'undefined') {
+    return await guardarArchivoLocal(archivo);
   }
 
   return urlManual;
@@ -71,7 +59,6 @@ export async function getBloquesPorContenido(idContenido: number): Promise<Bloqu
   }
 }
 
-
 export async function crearBloqueAction(formData: FormData) {
   try {
     const idModulo = Number(formData.get('id_modulo'));
@@ -80,7 +67,19 @@ export async function crearBloqueAction(formData: FormData) {
     const tituloBloque = (formData.get('titulo_bloque') as string) || null;
     const contenidoTexto = (formData.get('contenido_texto') as string) || null;
     const ordenBloque = Number(formData.get('orden_bloque')) || 1;
-    const esObligatorio = formData.get('es_obligatorio') === 'on';
+    const esObligatorio = formData.get('es_obligatorio') === 'on' || formData.get('es_obligatorio') === 'true';
+
+    const checkOrden = await query(
+      `SELECT id_bloque FROM public.bloque_contenido WHERE contenido_id_contenido = $1 AND orden_bloque = $2`,
+      [idContenido, ordenBloque]
+    );
+
+    if (checkOrden.rows && checkOrden.rows.length > 0) {
+      return {
+        success: false,
+        message: `El orden #${ordenBloque} ya está asignado a otro bloque en esta lección.`,
+      };
+    }
 
     const urlRecurso = await obtenerUrlRecurso(formData);
 
@@ -116,48 +115,63 @@ export async function crearBloqueAction(formData: FormData) {
   }
 }
 
-
 export async function actualizarBloqueAction(idBloque: number, formData: FormData) {
   try {
     const idModulo = Number(formData.get('id_modulo'));
     const idContenido = Number(formData.get('contenido_id_contenido'));
+
     const tipoBloque = formData.get('tipo_bloque') as string;
     const tituloBloque = (formData.get('titulo_bloque') as string) || null;
     const contenidoTexto = (formData.get('contenido_texto') as string) || null;
-    const ordenBloque = Number(formData.get('orden_bloque'));
-    const esObligatorio = formData.get('es_obligatorio') === 'on';
+    const ordenBloque = Number(formData.get('orden_bloque')) || 1;
+    const esObligatorio = formData.get('es_obligatorio') === 'on' || formData.get('es_obligatorio') === 'true';
 
-    const urlRecurso = await obtenerUrlRecurso(formData);
+    const checkOrden = await query(
+      `SELECT id_bloque FROM public.bloque_contenido WHERE contenido_id_contenido = $1 AND orden_bloque = $2 AND id_bloque != $3`,
+      [idContenido, ordenBloque, idBloque]
+    );
 
-    const updateSql = `
-      UPDATE public.bloque_contenido
-      SET 
-        tipo_bloque = $1,
-        titulo_bloque = $2,
-        contenido_texto = $3,
-        url_recurso = COALESCE($4, url_recurso),
-        orden_bloque = $5,
-        es_obligatorio = $6,
-        fecha_actualizacion = CURRENT_TIMESTAMP
-      WHERE id_bloque = $7 AND contenido_id_contenido = $8;
-    `;
+    if (checkOrden.rows && checkOrden.rows.length > 0) {
+      return {
+        success: false,
+        message: `El orden #${ordenBloque} ya está asignado a otro bloque en esta lección.`,
+      };
+    }
 
-    await query(updateSql, [
-      tipoBloque,
-      tituloBloque,
-      contenidoTexto,
-      urlRecurso,
-      ordenBloque,
-      esObligatorio,
-      idBloque,
-      idContenido,
-    ]);
+    const resAnterior = await query(
+      `SELECT url_recurso FROM public.bloque_contenido WHERE id_bloque = $1;`,
+      [idBloque]
+    );
+    const urlAnterior = resAnterior.rows[0]?.url_recurso;
 
-    revalidatePath(`/admin/modulos/${idModulo}/contenidos/${idContenido}`, 'page');
+    const nuevaUrlRecurso = await obtenerUrlRecurso(formData);
+
+    // Si cambio la url anterior se elimina el recurso anterior del almacenamiento
+    if (urlAnterior && urlAnterior !== nuevaUrlRecurso) {
+      await eliminarArchivoStorage(urlAnterior);
+    }
+
+    await query(
+      `UPDATE public.bloque_contenido
+       SET 
+         tipo_bloque = $1,
+         titulo_bloque = $2,
+         contenido_texto = $3,
+         url_recurso = $4,
+         orden_bloque = $5,
+         es_obligatorio = $6
+       WHERE id_bloque = $7`,
+      [tipoBloque, tituloBloque, contenidoTexto, nuevaUrlRecurso, ordenBloque, esObligatorio, idBloque]
+    );
+
+    revalidatePath(`/admin/modulos/${idModulo}/contenidos/${idContenido}`);
     return { success: true };
   } catch (error: any) {
     console.error('Error en actualizarBloqueAction:', error);
-    return { success: false, message: error.message || 'Error al actualizar el bloque.' };
+    return {
+      success: false,
+      message: error.message || 'Error al actualizar el bloque de contenido.',
+    };
   }
 }
 
@@ -185,14 +199,25 @@ export async function getContenidoPorId(idContenido: number) {
 
 export async function eliminarBloqueAction(idBloque: number, idModulo: number, idContenido: number) {
   try {
+    const resUrl = await query(
+      `SELECT url_recurso FROM public.bloque_contenido WHERE id_bloque = $1;`,
+      [idBloque]
+    );
+
+    const urlRecurso = resUrl.rows[0]?.url_recurso;
+
+    // Eliminar archivo usando eliminarArchivoStorage de storage-helper
+    if (urlRecurso) {
+      await eliminarArchivoStorage(urlRecurso);
+    }
+
     await query(`DELETE FROM public.recurso WHERE bloque_contenido_id_bloque = $1;`, [idBloque]);
     await query(`DELETE FROM public.bloque_contenido WHERE id_bloque = $1;`, [idBloque]);
 
-    revalidatePath(`/admin/modulos/${idModulo}/contenidos/${idContenido}`, 'page');
+    revalidatePath(`/admin/modulos/${idModulo}/contenidos/${idContenido}`);
     return { success: true };
   } catch (error: any) {
     console.error('Error en eliminarBloqueAction:', error);
     return { success: false, message: error.message || 'Error al eliminar el bloque.' };
   }
 }
-

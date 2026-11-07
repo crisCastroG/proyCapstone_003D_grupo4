@@ -1,184 +1,162 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { obtenerSesionActual } from '@/lib/auth';
-import {tienePlanActivo} from '@/lib/suscripcion';
+import { obtenerProgresoUsuario, obtenerEstructuraConBloqueos } from '@/lib/progreso';
 
 export async function GET(
-    request: Request,
-    { params }: { params: Promise<{ id_contenido: string }> | { id_contenido: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id_contenido?: string; idContenido?: string }> | { id_contenido?: string; idContenido?: string } }
 ) {
-    try {
-        const sesion = await obtenerSesionActual();
-        if (!sesion) {
-            return NextResponse.json({ error: 'No autenticado' }, { status: 401 });
-        }
-
-        const resolvedParams = await params;
-        const rawId = resolvedParams?.id_contenido;
-        const idContenido = parseInt(rawId, 10);
-        const idUsuario = sesion.id_usuario ?? (sesion as any).id;
-        const esPro = await tienePlanActivo(idUsuario);
-        if (!rawId || isNaN(idContenido) || !idUsuario) {
-            return NextResponse.json({ error: 'Parámetros inválidos.' }, { status: 400 });
-        }
-
-        const todasLasLeccionesResult = await query(
-            `SELECT 
-        c.id_contenido,
-        c.modulo_id_modulo AS id_modulo,
-        c.titulo_contenido AS titulo,
-        c.orden_contenido AS orden,
-        m.posicion_modulo,
-        m.es_gratuito AS modulo_gratuito,
-        COALESCE(p.estado_progreso, 'no_iniciado') AS estado
-       FROM public.contenido c
-       JOIN public.modulo m ON c.modulo_id_modulo = m.id_modulo
-       LEFT JOIN public.progreso_contenido p 
-         ON c.id_contenido = p.contenido_id_contenido 
-        AND p.usuario_id_usuario = $1
-       ORDER BY m.posicion_modulo ASC, c.orden_contenido ASC`,
-            [idUsuario]
-        );
-
-        const todasLecciones = todasLasLeccionesResult.rows;
-
-        let disponible = true;
-        const leccionesConBloqueo = todasLecciones.map((leccion) => {
-            const requierePro = !esPro && !leccion.modulo_gratuito;
-            const estaBloqueada = !disponible || requierePro;
-            if (estaBloqueada || leccion.estado !== 'completado') {
-                disponible = false;
-            }
-            return { ...leccion, bloqueado: estaBloqueada, requierePro };
-        });
-
-        const indexActual = leccionesConBloqueo.findIndex((l) => l.id_contenido === idContenido);
-        if (indexActual === -1) {
-            return NextResponse.json({ error: 'Contenido no encontrado.' }, { status: 404 });
-        }
-
-        const leccionActualSecuencia = leccionesConBloqueo[indexActual];
-
-        if(leccionActualSecuencia.requierePro) {
-            return NextResponse.json(
-                { error: 'Esta lección requiere una suscripción Pro para acceder.' },
-                { status: 403 }
-            );
-        }
-
-        if (leccionActualSecuencia.bloqueado) {
-            return NextResponse.json(
-                { error: 'Esta lección se encuentra bloqueada. Completa las lecciones anteriores para acceder.' },
-                { status: 403 }
-            );
-        }
-
-        if (leccionActualSecuencia.estado === 'no_iniciado') {
-            try {
-                await query(
-                    `INSERT INTO public.progreso_contenido (usuario_id_usuario, contenido_id_contenido, estado_progreso)
-           VALUES ($1, $2, 'en_curso')
-           ON CONFLICT (usuario_id_usuario, contenido_id_contenido) DO NOTHING`,
-                    [idUsuario, idContenido]
-                );
-            } catch (e) {
-                console.warn('No se pudo registrar en_curso automático:', e);
-            }
-        }
-
-        const contenidoResult = await query(
-            `SELECT 
-        c.id_contenido,
-        c.titulo_contenido AS titulo,
-        c.descripcion_contenido AS descripcion,
-        c.orden_contenido AS orden,
-        c.duracion_estimada AS duracion,
-        m.id_modulo,
-        m.titulo_modulo AS modulo_titulo,
-        m.posicion_modulo AS modulo_posicion
-       FROM public.contenido c
-       JOIN public.modulo m ON c.modulo_id_modulo = m.id_modulo
-       WHERE c.id_contenido = $1`,
-            [idContenido]
-        );
-
-        const contenidoActual = contenidoResult.rows[0];
-
-        const leccionAnterior = indexActual > 0 ? leccionesConBloqueo[indexActual - 1] : null;
-        const leccionSiguiente =
-            indexActual < leccionesConBloqueo.length - 1 ? leccionesConBloqueo[indexActual + 1] : null;
-
-        const modulosResult = await query(
-            `SELECT 
-        m.id_modulo,
-        m.titulo_modulo AS titulo,
-        m.posicion_modulo AS posicion,
-        COALESCE(
-          json_agg(
-            json_build_object(
-              'id_contenido', c.id_contenido,
-              'titulo', c.titulo_contenido,
-              'orden', c.orden_contenido,
-              'duracion', c.duracion_estimada
-            ) ORDER BY c.orden_contenido ASC
-          ) FILTER (WHERE c.id_contenido IS NOT NULL), '[]'
-        ) AS lecciones_raw
-       FROM public.modulo m
-       LEFT JOIN public.contenido c ON m.id_modulo = c.modulo_id_modulo
-       GROUP BY m.id_modulo
-       ORDER BY m.posicion_modulo ASC`
-        );
-
-        const modulosProcesados = modulosResult.rows.map((m: any) => {
-            const leccionesDelModulo = (m.lecciones_raw || []).map((l: any) => {
-                const itemSec = leccionesConBloqueo.find((item) => item.id_contenido === l.id_contenido);
-                return {
-                    ...l,
-                    estado: itemSec?.estado || 'no_iniciado',
-                    bloqueado: itemSec?.bloqueado ?? true,
-                };
-            });
-
-            return {
-                ...m,
-                lecciones: leccionesDelModulo,
-            };
-        });
-
-        const totalContenidos = todasLecciones.length;
-        const totalCompletados = todasLecciones.filter((l) => l.estado === 'completado').length;
-        const porcentajeProgreso =
-            totalContenidos > 0 ? Math.round((totalCompletados / totalContenidos) * 100) : 0;
-
-        const bloquesResult = await query(
-            `SELECT id_bloque, tipo_bloque, titulo_bloque, contenido_texto, url_recurso, orden_bloque
-       FROM public.bloque_contenido
-       WHERE contenido_id_contenido = $1
-       ORDER BY orden_bloque ASC`,
-            [idContenido]
-        );
-
-        const recursosResult = await query(
-            `SELECT r.id_recurso, r.titulo_recurso, r.url_recurso, r.nombre_archivo, r.tamano_bytes, r.es_descargable
-       FROM public.recurso r
-       JOIN public.bloque_contenido b ON r.bloque_contenido_id_bloque = b.id_bloque
-       WHERE b.contenido_id_contenido = $1`,
-            [idContenido]
-        );
-
-        return NextResponse.json({
-            contenido: contenidoActual,
-            modulos: modulosProcesados,
-            bloques: bloquesResult.rows,
-            recursos: recursosResult.rows,
-            navegacion: {
-                anterior: leccionAnterior,
-                siguiente: leccionSiguiente,
-            },
-            progresoGlobal: porcentajeProgreso,
-        });
-    } catch (error) {
-        console.error('Error al cargar contenido en API:', error);
-        return NextResponse.json({ error: 'Error interno al cargar la lección.' }, { status: 500 });
+  try {
+    const sesion = await obtenerSesionActual();
+    if (!sesion) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
+
+    const resolvedParams = await params;
+    const rawId = resolvedParams?.id_contenido || resolvedParams?.idContenido;
+    const idContenido = parseInt(String(rawId), 10);
+
+    if (!rawId || isNaN(idContenido)) {
+      return NextResponse.json({ error: 'ID de contenido inválido' }, { status: 400 });
+    }
+
+    // Obtiene el contenido actual
+    let resContenido: { rows: any[] } = { rows: [] };
+    try {
+      resContenido = await query(
+        `SELECT 
+          c.id_contenido,
+          c.titulo_contenido AS titulo,
+          c.descripcion_contenido AS descripcion,
+          c.orden_contenido AS orden,
+          c.duracion_estimada AS duracion,
+          c.modulo_id_modulo AS id_modulo,
+          m.titulo_modulo AS modulo_titulo,
+          m.posicion_modulo AS modulo_posicion
+         FROM public.contenido c
+         JOIN public.modulo m ON m.id_modulo = c.modulo_id_modulo
+         WHERE c.id_contenido = $1;`,
+        [idContenido]
+      );
+    } catch (e) {
+      resContenido = await query(
+        `SELECT 
+          c.id_contenido,
+          c.titulo_contenido AS titulo,
+          c.descripcion_contenido AS descripcion,
+          c.orden_contenido AS orden,
+          c.modulo_id_modulo AS id_modulo,
+          m.titulo_modulo AS modulo_titulo,
+          m.posicion_modulo AS modulo_posicion
+         FROM public.contenido c
+         JOIN public.modulo m ON m.id_modulo = c.modulo_id_modulo
+         WHERE c.id_contenido = $1;`,
+        [idContenido]
+      );
+    }
+
+    if (resContenido.rows.length === 0) {
+      return NextResponse.json({ error: 'Lección no encontrada' }, { status: 404 });
+    }
+    const contenido = resContenido.rows[0];
+
+    // Bloques 
+    let bloques: any[] = [];
+    try {
+      const resBloques = await query(
+        `SELECT id_bloque, tipo_bloque, titulo_bloque, contenido_texto, url_recurso, orden_bloque
+         FROM public.bloque_contenido
+         WHERE contenido_id_contenido = $1
+         ORDER BY orden_bloque ASC;`,
+        [idContenido]
+      );
+      bloques = resBloques.rows;
+    } catch (e) {
+      try {
+        const resBloques = await query(
+          `SELECT id_bloque, tipo_bloque, titulo_bloque, contenido_texto, url_recurso, orden_bloque
+           FROM public.bloque
+           WHERE contenido_id_contenido = $1
+           ORDER BY orden_bloque ASC;`,
+          [idContenido]
+        );
+        bloques = resBloques.rows;
+      } catch (err) {}
+    }
+
+    // Recursos descargables
+    let recursos: any[] = [];
+    try {
+      const resRecursos = await query(
+        `SELECT id_recurso, titulo_recurso, url_recurso, nombre_archivo, tamano_bytes, es_descargable
+         FROM public.recurso_contenido
+         WHERE contenido_id_contenido = $1;`,
+        [idContenido]
+      );
+      recursos = resRecursos.rows;
+    } catch (e) {
+      try {
+        const resRecursos = await query(
+          `SELECT id_recurso, titulo_recurso, url_recurso, nombre_archivo, tamano_bytes, es_descargable
+           FROM public.recurso
+           WHERE contenido_id_contenido = $1;`,
+          [idContenido]
+        );
+        recursos = resRecursos.rows;
+      } catch (err) {}
+    }
+
+    const modulosEstructurados = await obtenerEstructuraConBloqueos(sesion.id_usuario);
+
+    const itemsOrdenadosGlobal: any[] = [];
+    modulosEstructurados.forEach((m) => itemsOrdenadosGlobal.push(...m.items));
+
+    const indexActual = itemsOrdenadosGlobal.findIndex(
+      (item) => item.tipo === 'contenido' && Number(item.id) === idContenido
+    );
+
+    const itemAnterior = indexActual > 0 ? itemsOrdenadosGlobal[indexActual - 1] : null;
+    const itemSiguiente =
+      indexActual !== -1 && indexActual < itemsOrdenadosGlobal.length - 1
+        ? itemsOrdenadosGlobal[indexActual + 1]
+        : null;
+
+    const progreso = await obtenerProgresoUsuario(sesion.id_usuario);
+
+    return NextResponse.json({
+      contenido,
+      bloques,
+      recursos,
+      modulos: modulosEstructurados,
+      navegacion: {
+        anterior: itemAnterior
+          ? {
+              id: Number(itemAnterior.id),
+              id_modulo: Number(itemAnterior.id_modulo),
+              titulo: itemAnterior.titulo,
+              tipo: itemAnterior.tipo,
+              bloqueado: itemAnterior.bloqueado ?? false,
+            }
+          : null,
+        siguiente: itemSiguiente
+          ? {
+              id: Number(itemSiguiente.id),
+              id_modulo: Number(itemSiguiente.id_modulo),
+              titulo: itemSiguiente.titulo,
+              tipo: itemSiguiente.tipo,
+              bloqueado: itemSiguiente.bloqueado ?? false,
+            }
+          : null,
+      },
+      resumenProgreso: {
+        porcentajeGlobal: progreso.porcentajeGlobal,
+        totalItems: progreso.totalItems,
+        completadosItems: progreso.totalCompletados,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error en GET /api/contenido:', error);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+  }
 }

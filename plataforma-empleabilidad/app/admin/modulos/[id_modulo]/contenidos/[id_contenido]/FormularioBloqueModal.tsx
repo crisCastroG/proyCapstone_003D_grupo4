@@ -13,6 +13,7 @@ export default function FormularioBloqueModal({ idModulo, idContenido, siguiente
   const [isOpen, setIsOpen] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [tipoBloque, setTipoBloque] = useState<string>('texto');
+  const [modoEntrada, setModoEntrada] = useState<'url' | 'archivo'>('url');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -29,8 +30,24 @@ export default function FormularioBloqueModal({ idModulo, idContenido, siguiente
 
     if (res.success) {
       setIsOpen(false);
+      setModoEntrada('url');
     } else {
-      setError(res.message || 'Ocurrió un error');
+      setError(res.message || 'Ocurrió un error al guardar el bloque.');
+    }
+  };
+
+  const obtenerAceptados = () => {
+    switch (tipoBloque) {
+      case 'imagen':
+        return 'image/*';
+      case 'video':
+        return 'video/*';
+      case 'descarga':
+      case 'pdf':
+      case 'recurso':
+        return '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,application/pdf';
+      default:
+        return '*';
     }
   };
 
@@ -48,7 +65,7 @@ export default function FormularioBloqueModal({ idModulo, idContenido, siguiente
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-xl border border-[#c3c6d0]/40 w-full max-w-lg p-6 flex flex-col gap-4">
         <div className="flex justify-between items-center border-b border-[#c3c6d0]/30 pb-3">
           <h3 className="text-base font-bold text-[#002547]">Nuevo Bloque de Contenido</h3>
@@ -62,7 +79,7 @@ export default function FormularioBloqueModal({ idModulo, idContenido, siguiente
         </div>
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg">
+          <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg font-semibold">
             {error}
           </div>
         )}
@@ -76,12 +93,13 @@ export default function FormularioBloqueModal({ idModulo, idContenido, siguiente
               name="tipo_bloque"
               value={tipoBloque}
               onChange={(e) => setTipoBloque(e.target.value)}
-              className="w-full p-2.5 border border-[#c3c6d0] rounded-lg focus:outline-none focus:border-[#006689]"
+              className="w-full p-2.5 border border-[#c3c6d0] rounded-lg focus:outline-none focus:border-[#006689] bg-white font-medium"
             >
               <option value="texto">Texto / Explicación</option>
+              <option value="imagen">Imagen Ilustrativa</option>
               <option value="video">Video (URL / Embed)</option>
-              <option value="pdf">Documento PDF</option>
-              <option value="recurso">Recurso Descargable</option>
+              <option value="descarga">Archivo / Documento Descargable (PDF, Docs, ZIP)</option>
+              <option value="url">Enlace / URL Externa</option>
             </select>
           </div>
 
@@ -97,7 +115,7 @@ export default function FormularioBloqueModal({ idModulo, idContenido, siguiente
             />
           </div>
 
-          {tipoBloque === 'texto' && (
+          {tipoBloque === 'texto' ? (
             <div>
               <label className="block font-bold text-[#002547] uppercase mb-1">
                 Contenido de Texto
@@ -110,20 +128,77 @@ export default function FormularioBloqueModal({ idModulo, idContenido, siguiente
                 className="w-full p-2.5 border border-[#c3c6d0] rounded-lg focus:outline-none focus:border-[#006689]"
               />
             </div>
-          )}
-
-          {(tipoBloque === 'video' || tipoBloque === 'pdf' || tipoBloque === 'recurso') && (
+          ) : (
             <div>
               <label className="block font-bold text-[#002547] uppercase mb-1">
-                URL del Recurso
+                Texto / Instrucción Acompañante (Opcional)
               </label>
-              <input
-                type="url"
-                name="url_recurso"
-                required
-                placeholder="https://..."
+              <textarea
+                name="contenido_texto"
+                rows={2}
+                placeholder="Escribe un texto aclaratorio opcional..."
                 className="w-full p-2.5 border border-[#c3c6d0] rounded-lg focus:outline-none focus:border-[#006689]"
               />
+            </div>
+          )}
+
+          {tipoBloque !== 'texto' && (
+            <div className="flex flex-col gap-2 bg-[#f8fafc] p-3 rounded-lg border border-[#c3c6d0]/40">
+              <div className="flex items-center gap-3 border-b border-[#c3c6d0]/30 pb-2">
+                <span className="font-bold text-[#002547] uppercase text-[11px]">
+                  Origen del Recurso:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setModoEntrada('url')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
+                    modoEntrada === 'url'
+                      ? 'bg-[#006689] text-white'
+                      : 'text-[#737780] hover:bg-gray-200'
+                  }`}
+                >
+                  Enlace URL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModoEntrada('archivo')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
+                    modoEntrada === 'archivo'
+                      ? 'bg-[#006689] text-white'
+                      : 'text-[#737780] hover:bg-gray-200'
+                  }`}
+                >
+                  Subir Archivo Local
+                </button>
+              </div>
+
+              {modoEntrada === 'url' ? (
+                <div>
+                  <label className="block font-bold text-[#002547] uppercase mb-1 text-[11px]">
+                    URL Externa o Ruta
+                  </label>
+                  <input
+                    type="text"
+                    name="url_recurso"
+                    required
+                    placeholder="https://... o /uploads/..."
+                    className="w-full p-2.5 border border-[#c3c6d0] rounded-lg focus:outline-none focus:border-[#006689] bg-white"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block font-bold text-[#002547] uppercase mb-1 text-[11px]">
+                    Seleccionar Archivo Local
+                  </label>
+                  <input
+                    type="file"
+                    name="archivo_subida"
+                    required
+                    accept={obtenerAceptados()}
+                    className="w-full text-xs text-[#42474f] file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-[#e6f2fb] file:text-[#006689] hover:file:bg-[#006689] hover:file:text-white transition-colors cursor-pointer bg-white p-1 rounded-lg border border-[#c3c6d0]"
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -145,11 +220,11 @@ export default function FormularioBloqueModal({ idModulo, idContenido, siguiente
             <div className="flex items-center gap-2 pt-4">
               <input
                 type="checkbox"
-                id="es_obligatorio"
+                id="es_obligatorio_modal"
                 name="es_obligatorio"
                 className="w-4 h-4 accent-[#002547] rounded cursor-pointer"
               />
-              <label htmlFor="es_obligatorio" className="font-bold text-[#002547] cursor-pointer">
+              <label htmlFor="es_obligatorio_modal" className="font-bold text-[#002547] cursor-pointer">
                 ¿Es Obligatorio?
               </label>
             </div>
@@ -159,6 +234,7 @@ export default function FormularioBloqueModal({ idModulo, idContenido, siguiente
             <button
               type="button"
               onClick={() => setIsOpen(false)}
+              disabled={cargando}
               className="px-4 py-2 border border-[#c3c6d0] rounded-lg font-bold text-[#42474f] hover:bg-gray-50"
             >
               Cancelar

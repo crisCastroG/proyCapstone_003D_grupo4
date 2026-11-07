@@ -13,7 +13,6 @@ async function getModulo(id: number) {
 }
 
 async function getContenidos(idModulo: number) {
-  // Se usa exactamente modulo_id_modulo y orden_contenido
   const res = await query(
     'SELECT * FROM contenido WHERE modulo_id_modulo = $1 ORDER BY orden_contenido ASC',
     [idModulo]

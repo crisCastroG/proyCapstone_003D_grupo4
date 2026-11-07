@@ -6,11 +6,17 @@ import { crearModulo, actualizarModulo, eliminarModulo } from './actions';
 
 type Props = {
   moduloEditar?: any;
+  modulosExistentes?: any[]; // Lista opcional de módulos para validar localmente
   onSuccess?: () => void;
   onCancel?: () => void;
 };
 
-export default function FormularioModulo({ moduloEditar, onSuccess, onCancel }: Props) {
+export default function FormularioModulo({
+  moduloEditar,
+  modulosExistentes = [],
+  onSuccess,
+  onCancel,
+}: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
@@ -46,8 +52,25 @@ export default function FormularioModulo({ moduloEditar, onSuccess, onCancel }: 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setCargando(true);
     setError('');
+
+    // Con esto se valida si el modulo a crear ocupa la misma posicion que oto antes de
+    if (modulosExistentes && modulosExistentes.length > 0) {
+      const posicionOcupada = modulosExistentes.some(
+        (m) =>
+          Number(m.posicion_modulo) === Number(formData.posicion_modulo) &&
+          m.id_modulo !== moduloEditar?.id_modulo
+      );
+
+      if (posicionOcupada) {
+        setError(
+          `La posición #${formData.posicion_modulo} ya está ocupada por otro módulo. Por favor elige un número diferente.`
+        );
+        return;
+      }
+    }
+
+    setCargando(true);
 
     let res;
     if (moduloEditar) {
@@ -118,7 +141,7 @@ export default function FormularioModulo({ moduloEditar, onSuccess, onCancel }: 
             <p className="text-xs text-[#42474f] leading-relaxed">
               ¿Estás seguro de que deseas eliminar el módulo{' '}
               <strong className="text-[#002547]">&quot;{moduloEditar?.titulo_modulo}&quot;</strong>?
-              Se eliminarán permanentemente todos sus contenidos, lecciones y progresos asociados.
+              Se eliminarán permanentemente todos sus contenidos y lecciones.
             </p>
 
             <div className="flex justify-end gap-2 pt-3 border-t border-[#c3c6d0]/30">
@@ -160,7 +183,8 @@ export default function FormularioModulo({ moduloEditar, onSuccess, onCancel }: 
         </div>
 
         {error && (
-          <div className="p-3 mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-semibold">
+          <div className="p-3 mb-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs font-semibold flex items-center gap-2">
+            <span className="material-symbols-outlined text-base">error</span>
             {error}
           </div>
         )}

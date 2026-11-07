@@ -1,25 +1,3 @@
-INSERT INTO public.rol_usuario (id_rol, nombre_rol)
-VALUES 
-  (1, 'administrador'),
-  (2, 'usuario')
-ON CONFLICT (id_rol) DO UPDATE SET nombre_rol = EXCLUDED.nombre_rol;
-
-INSERT INTO public.profesion (id_profesion, nombre_profesion) 
-VALUES (1, 'Ingeniero/a Civil Informático/a') 
-ON CONFLICT DO NOTHING;
-
-INSERT INTO public.area_de_trabajo (id_area, nombre_area) 
-VALUES (1, 'Tecnología de la Información y Desarrollo de Software') 
-ON CONFLICT DO NOTHING;
-
-INSERT INTO public.region (id_region, nombre_region) 
-VALUES (1, 'Región del Biobío') 
-ON CONFLICT DO NOTHING;
-
-INSERT INTO public.ciudad (id_ciudad, nombre_ciudad, region_id_region) 
-VALUES (1, 'Concepción', 1) 
-ON CONFLICT DO NOTHING;
-
 INSERT INTO public.usuario (
   correo,
   "contraseña",
@@ -103,7 +81,7 @@ ON CONFLICT DO NOTHING;
 
 
 INSERT INTO public.progreso_contenido (usuario_id_usuario, contenido_id_contenido, estado_progreso)
-SELECT u.id_usuario, c.id_contenido, 'no_iniciado'
+SELECT u.id_usuario, c.id_contenido, 'no_completado'
 FROM public.usuario u
 CROSS JOIN public.contenido c
 WHERE u.run IN ('11111111-1', '22222222-2')

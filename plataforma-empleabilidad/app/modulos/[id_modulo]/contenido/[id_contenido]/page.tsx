@@ -3,29 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import SidebarNavegacion, { ModuloSidebar } from '../../../_components/SidebarNavegacion';
 
-interface LeccionNav {
-  id_contenido: number;
+interface ItemNav {
+  id: number;
   id_modulo: number;
   titulo: string;
   orden: number;
+  tipo: 'contenido' | 'evaluacion';
   bloqueado?: boolean;
-}
-
-interface Leccion {
-  id_contenido: number;
-  titulo: string;
-  orden: number;
-  duracion?: number;
-  estado?: string;
-  bloqueado?: boolean;
-}
-
-interface ModuloSidebar {
-  id_modulo: number;
-  titulo: string;
-  posicion: number;
-  lecciones: Leccion[];
 }
 
 interface Bloque {
@@ -66,9 +52,13 @@ export default function ContenidoViewPage() {
   const [modulos, setModulos] = useState<ModuloSidebar[]>([]);
   const [bloques, setBloques] = useState<Bloque[]>([]);
   const [recursos, setRecursos] = useState<Recurso[]>([]);
-  const [navAnterior, setNavAnterior] = useState<LeccionNav | null>(null);
-  const [navSiguiente, setNavSiguiente] = useState<LeccionNav | null>(null);
+  const [navAnterior, setNavAnterior] = useState<ItemNav | null>(null);
+  const [navSiguiente, setNavSiguiente] = useState<ItemNav | null>(null);
+
+  // Estados de Progreso
   const [progresoGlobal, setProgresoGlobal] = useState<number>(0);
+  const [totalItems, setTotalItems] = useState<number>(0);
+  const [completadosItems, setCompletadosItems] = useState<number>(0);
 
   const [cargando, setCargando] = useState(true);
   const [guardandoProgreso, setGuardandoProgreso] = useState(false);
@@ -95,7 +85,12 @@ export default function ContenidoViewPage() {
         setRecursos(data.recursos || []);
         setNavAnterior(data.navegacion?.anterior || null);
         setNavSiguiente(data.navegacion?.siguiente || null);
-        setProgresoGlobal(data.progresoGlobal || 0);
+
+        if (data.resumenProgreso) {
+          setProgresoGlobal(data.resumenProgreso.porcentajeGlobal || 0);
+          setTotalItems(data.resumenProgreso.totalItems || 0);
+          setCompletadosItems(data.resumenProgreso.completadosItems || 0);
+        }
       } catch {
         setError('Error al conectar con el servidor.');
       } finally {
@@ -106,7 +101,6 @@ export default function ContenidoViewPage() {
     cargarDatosLeccion();
   }, [idContenido]);
 
-  // Guarda en PostgreSQL y desplaza al usuario a la siguiente lección
   const avanzarLeccion = async () => {
     if (!detalle) return;
 
@@ -128,9 +122,12 @@ export default function ContenidoViewPage() {
         return;
       }
 
-      // Redireccionar si hay lección siguiente
       if (navSiguiente) {
-        router.push(`/modulos/${navSiguiente.id_modulo}/contenido/${navSiguiente.id_contenido}`);
+        const urlNext =
+          navSiguiente.tipo === 'evaluacion'
+            ? `/modulos/evaluaciones/${navSiguiente.id}`
+            : `/modulos/${navSiguiente.id_modulo}/contenido/${navSiguiente.id}`;
+        router.push(urlNext);
       } else {
         router.push('/modulos');
       }
@@ -167,89 +164,15 @@ export default function ContenidoViewPage() {
 
   return (
     <div className="flex flex-col md:flex-row gap-8 -mt-2">
-
-      <aside className="w-full md:w-80 bg-white border border-[#E2E8F0] rounded-2xl p-5 flex flex-col gap-6 shrink-0 shadow-sm self-start">
-        <div className="bg-[#F8FAFC] p-4 rounded-xl border border-[#E2E8F0]">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="material-symbols-outlined text-[#002547] text-lg">account_circle</span>
-            <div>
-              <h4 className="text-xs font-bold text-[#002547]">Progreso</h4>
-              <p className="text-[11px] text-[#38BDF5] font-semibold">{progresoGlobal}% completado</p>
-            </div>
-          </div>
-          <div className="w-full h-1.5 bg-[#E2E8F0] rounded-full overflow-hidden mt-2">
-            <div
-              className="h-full bg-[#002547] rounded-full transition-all duration-500"
-              style={{ width: `${progresoGlobal}%` }}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-6">
-          {modulos.map((mod) => (
-            <div key={mod.id_modulo} className="flex flex-col gap-2">
-              <span className="text-[11px] font-bold text-[#737780] uppercase tracking-wider">
-                MÓDULO {mod.posicion}: {mod.titulo}
-              </span>
-
-              <nav className="flex flex-col gap-1">
-                {mod.lecciones.length === 0 ? (
-                  <span className="text-xs text-[#94A3B8] italic pl-2">Sin contenidos</span>
-                ) : (
-                  mod.lecciones.map((leccion) => {
-                    const esActiva = leccion.id_contenido === detalle.id_contenido;
-                    const esCompletada = leccion.estado === 'completado';
-                    const estaBloqueada = Boolean(leccion.bloqueado);
-
-                    if (estaBloqueada) {
-                      return (
-                        <div
-                          key={leccion.id_contenido}
-                          className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold text-gray-400 opacity-60 cursor-not-allowed select-none bg-slate-50"
-                        >
-                          <span className="material-symbols-outlined text-base text-gray-400">
-                            lock
-                          </span>
-                          <span className="truncate">
-                            {leccion.orden}. {leccion.titulo}
-                          </span>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <Link
-                        key={leccion.id_contenido}
-                        href={`/modulos/${mod.id_modulo}/contenido/${leccion.id_contenido}`}
-                        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all ${
-                          esActiva
-                            ? 'bg-[#E6F2FB] text-[#002547] border-l-4 border-[#002547]'
-                            : 'text-[#42474F] hover:bg-slate-50'
-                        }`}
-                      >
-                        <span
-                          className={`material-symbols-outlined text-base ${
-                            esCompletada
-                              ? 'text-[#006689]'
-                              : esActiva
-                              ? 'text-[#002547]'
-                              : 'text-[#94A3B8]'
-                          }`}
-                        >
-                          {esCompletada ? 'check_circle' : esActiva ? 'play_circle' : 'circle'}
-                        </span>
-                        <span className="truncate">
-                          {leccion.orden}. {leccion.titulo}
-                        </span>
-                      </Link>
-                    );
-                  })
-                )}
-              </nav>
-            </div>
-          ))}
-        </div>
-      </aside>
+      {/* BARRA LATERAL IZQUIERDA UNIFICADA CON PROGRESO COMPLETO */}
+      <SidebarNavegacion
+        modulos={modulos}
+        progresoGlobal={progresoGlobal}
+        totalItems={totalItems}
+        completadosItems={completadosItems}
+        idActivo={detalle.id_contenido}
+        tipoActivo="contenido"
+      />
 
       <main className="flex-1 flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-5">
@@ -389,10 +312,15 @@ export default function ContenidoViewPage() {
           )}
         </div>
 
+        {/* NAVEGACIÓN INFERIOR */}
         <footer className="mt-8 pt-6 border-t border-[#E2E8F0] flex items-center justify-between gap-4">
           {navAnterior && !navAnterior.bloqueado ? (
             <Link
-              href={`/modulos/${navAnterior.id_modulo}/contenido/${navAnterior.id_contenido}`}
+              href={
+                navAnterior.tipo === 'evaluacion'
+                  ? `/modulos/evaluaciones/${navAnterior.id}`
+                  : `/modulos/${navAnterior.id_modulo}/contenido/${navAnterior.id}`
+              }
               className="px-5 py-2.5 bg-white border border-[#E2E8F0] text-[#002547] font-semibold text-xs rounded-xl hover:bg-slate-50 transition-colors flex items-center gap-2 shadow-sm"
             >
               <span className="material-symbols-outlined text-base">arrow_back</span>
@@ -410,8 +338,10 @@ export default function ContenidoViewPage() {
             {guardandoProgreso
               ? 'Guardando...'
               : navSiguiente
-              ? 'Siguiente Lección'
-              : 'Completar y Finalizar'}
+                ? navSiguiente.tipo === 'evaluacion'
+                  ? 'Rendir Test'
+                  : 'Siguiente Lección'
+                : 'Completar y Finalizar'}
             <span className="material-symbols-outlined text-base">
               {navSiguiente ? 'arrow_forward' : 'check'}
             </span>

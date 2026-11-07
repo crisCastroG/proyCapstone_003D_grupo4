@@ -14,7 +14,7 @@ VALUE IN ('aprobado', 'pendiente', 'rechazado', 'reembolsado')
 );
 
 CREATE DOMAIN public.estado_progreso AS VARCHAR(20)
-CHECK (VALUE IN ('no_iniciado', 'completado'));
+CHECK (VALUE IN ('no_completado', 'completado'));
 
 CREATE DOMAIN public.estado_usuario AS VARCHAR(20)
 CHECK (VALUE IN ('activo', 'desactivado'));
@@ -274,143 +274,115 @@ CONSTRAINT recurso_tamano_ck
 -- Evaluaciones
 
 CREATE TABLE public.evaluacion (
-id_evaluacion INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-titulo_evaluacion VARCHAR(200) NOT NULL,
-descripcion_evaluacion TEXT,
-porcentaje_minimo_aprobacion NUMERIC(5,2) NOT NULL,
-duracion_minutos INTEGER NOT NULL,
+    id_evaluacion INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    titulo_evaluacion VARCHAR(200) NOT NULL,
+    descripcion_evaluacion TEXT,
+    porcentaje_minimo_aprobacion NUMERIC(5,2) NOT NULL DEFAULT 80.00,
+    duracion_minutos INTEGER NOT NULL DEFAULT 15,
+    orden_evaluacion INTEGER NOT NULL DEFAULT 1,
+    estado_evaluacion public.estado_evaluacion NOT NULL DEFAULT 'borrador',
+    fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    modulo_id_modulo INTEGER NOT NULL 
+        REFERENCES public.modulo (id_modulo) ON DELETE CASCADE,
 
-estado_evaluacion public.estado_evaluacion
-    NOT NULL DEFAULT 'borrador',
-
-fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-contenido_id_contenido INTEGER NOT NULL
-    REFERENCES public.contenido (id_contenido),
-
-CONSTRAINT evaluacion_porcentaje_ck
-    CHECK (porcentaje_minimo_aprobacion BETWEEN 0 AND 100),
-
-CONSTRAINT evaluacion_duracion_ck
-    CHECK (duracion_minutos > 0)
-
-
+    CONSTRAINT evaluacion_porcentaje_ck
+        CHECK (porcentaje_minimo_aprobacion BETWEEN 0 AND 100),
+    CONSTRAINT evaluacion_duracion_ck
+        CHECK (duracion_minutos > 0),
+    CONSTRAINT evaluacion_modulo_orden_uk
+        UNIQUE (modulo_id_modulo, orden_evaluacion)
 );
 
 CREATE TABLE public.pregunta (
-id_pregunta INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-enunciado TEXT NOT NULL,
-puntaje NUMERIC(8,2) NOT NULL,
-orden INTEGER NOT NULL,
+    id_pregunta INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    enunciado TEXT NOT NULL,
+    puntaje NUMERIC(8,2) NOT NULL DEFAULT 1.00,
+    orden INTEGER NOT NULL,
+    evaluacion_id_evaluacion INTEGER NOT NULL 
+        REFERENCES public.evaluacion (id_evaluacion) ON DELETE CASCADE,
 
-evaluacion_id_evaluacion INTEGER NOT NULL
-    REFERENCES public.evaluacion (id_evaluacion),
-
-CONSTRAINT pregunta_puntaje_ck
-    CHECK (puntaje >= 0),
-
-CONSTRAINT pregunta_orden_ck
-    CHECK (orden > 0),
-
-CONSTRAINT pregunta_evaluacion_orden_uk
-    UNIQUE (evaluacion_id_evaluacion, orden)
-
-
+    CONSTRAINT pregunta_puntaje_ck
+        CHECK (puntaje >= 0),
+    CONSTRAINT pregunta_orden_ck
+        CHECK (orden > 0),
+    CONSTRAINT pregunta_evaluacion_orden_uk
+        UNIQUE (evaluacion_id_evaluacion, orden)
 );
 
 CREATE TABLE public.alternativa (
-id_alternativa INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-texto_alternativa TEXT NOT NULL,
-es_correcta BOOLEAN NOT NULL DEFAULT FALSE,
-orden INTEGER NOT NULL,
+    id_alternativa INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    texto_alternativa TEXT NOT NULL,
+    es_correcta BOOLEAN NOT NULL DEFAULT FALSE,
+    orden INTEGER NOT NULL,
+    pregunta_id_pregunta INTEGER NOT NULL 
+        REFERENCES public.pregunta (id_pregunta) ON DELETE CASCADE,
 
-pregunta_id_pregunta INTEGER NOT NULL
-    REFERENCES public.pregunta (id_pregunta),
-
-CONSTRAINT alternativa_orden_ck
-    CHECK (orden > 0),
-
-CONSTRAINT alternativa_pregunta_orden_uk
-    UNIQUE (pregunta_id_pregunta, orden)
-
-
+    CONSTRAINT alternativa_orden_ck
+        CHECK (orden BETWEEN 1 AND 9),
+    CONSTRAINT alternativa_pregunta_orden_uk
+        UNIQUE (pregunta_id_pregunta, orden)
 );
 
 -- Intentos y respuestas
 
 CREATE TABLE public.intento_evaluacion (
-id_intento INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_intento INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    numero_intento INTEGER NOT NULL,
+    fecha_intento TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    puntaje_obtenido NUMERIC(8,2),
+    aprobado BOOLEAN DEFAULT FALSE,
+    usuario_id_usuario INTEGER NOT NULL 
+        REFERENCES public.usuario (id_usuario) ON DELETE CASCADE,
+    evaluacion_id_evaluacion INTEGER NOT NULL 
+        REFERENCES public.evaluacion (id_evaluacion) ON DELETE CASCADE,
 
-numero_intento INTEGER NOT NULL,
-
-fecha_intento TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-puntaje_obtenido NUMERIC(8,2),
-aprobado BOOLEAN,
-
-usuario_id_usuario INTEGER NOT NULL
-    REFERENCES public.usuario (id_usuario),
-
-evaluacion_id_evaluacion INTEGER NOT NULL
-    REFERENCES public.evaluacion (id_evaluacion),
-
-CONSTRAINT intento_numero_ck
-    CHECK (numero_intento > 0),
-
-CONSTRAINT intento_puntaje_ck
-    CHECK (puntaje_obtenido >= 0),
-
-CONSTRAINT intento_usuario_evaluacion_numero_uk
-    UNIQUE (
-        usuario_id_usuario,
-        evaluacion_id_evaluacion,
-        numero_intento
-    )
-
-
+    CONSTRAINT intento_numero_ck
+        CHECK (numero_intento > 0),
+    CONSTRAINT intento_puntaje_ck
+        CHECK (puntaje_obtenido >= 0),
+    CONSTRAINT intento_usuario_evaluacion_numero_uk
+        UNIQUE (usuario_id_usuario, evaluacion_id_evaluacion, numero_intento)
 );
 
 CREATE TABLE public.respuesta_usuario (
-id_respuesta INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_respuesta INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    es_correcta BOOLEAN,
+    alternativa_id_alternativa INTEGER NOT NULL 
+        REFERENCES public.alternativa (id_alternativa) ON DELETE CASCADE,
+    intento_evaluacion_id_intento INTEGER NOT NULL 
+        REFERENCES public.intento_evaluacion (id_intento) ON DELETE CASCADE,
 
-es_correcta BOOLEAN,
-
-alternativa_id_alternativa INTEGER NOT NULL
-    REFERENCES public.alternativa (id_alternativa),
-
-intento_evaluacion_id_intento INTEGER NOT NULL
-    REFERENCES public.intento_evaluacion (id_intento),
-
-CONSTRAINT respuesta_intento_alternativa_uk
-    UNIQUE (
-        intento_evaluacion_id_intento,
-        alternativa_id_alternativa
-    )
-
-
+    CONSTRAINT respuesta_intento_alternativa_uk
+        UNIQUE (intento_evaluacion_id_intento, alternativa_id_alternativa)
 );
 
 -- Progreso del usuario
 
 CREATE TABLE public.progreso_contenido (
-estado_progreso public.estado_progreso
-NOT NULL DEFAULT 'no_iniciado',
+    estado_progreso public.estado_progreso NOT NULL DEFAULT 'no_completado',
+    fecha_completado TIMESTAMPTZ,
+    usuario_id_usuario INTEGER NOT NULL 
+        REFERENCES public.usuario (id_usuario) ON DELETE CASCADE,
+    contenido_id_contenido INTEGER NOT NULL 
+        REFERENCES public.contenido (id_contenido) ON DELETE CASCADE,
 
-fecha_completado TIMESTAMPTZ,
+    CONSTRAINT progreso_contenido_pk 
+        PRIMARY KEY (usuario_id_usuario, contenido_id_contenido)
+);
 
-usuario_id_usuario INTEGER NOT NULL
-    REFERENCES public.usuario (id_usuario),
+CREATE TABLE public.progreso_evaluacion (
+    estado_progreso public.estado_progreso NOT NULL DEFAULT 'no_completado',
+    puntaje_maximo NUMERIC(8,2) DEFAULT 0,
+    aprobado BOOLEAN NOT NULL DEFAULT FALSE,
+    fecha_completado TIMESTAMPTZ,
+    usuario_id_usuario INTEGER NOT NULL 
+        REFERENCES public.usuario (id_usuario) ON DELETE CASCADE,
+    evaluacion_id_evaluacion INTEGER NOT NULL 
+        REFERENCES public.evaluacion (id_evaluacion) ON DELETE CASCADE,
 
-contenido_id_contenido INTEGER NOT NULL
-    REFERENCES public.contenido (id_contenido),
-
-CONSTRAINT progreso_contenido_pk
-    PRIMARY KEY (
-        usuario_id_usuario,
-        contenido_id_contenido
-    )
-
-
+    CONSTRAINT progreso_evaluacion_pk 
+        PRIMARY KEY (usuario_id_usuario, evaluacion_id_evaluacion)
 );
 
 -- Indices
@@ -430,7 +402,7 @@ CREATE INDEX plan_usuario_plan_idx ON public.plan_usuario (plan_id_plan);
 CREATE INDEX plan_usuario_pago_idx ON public.plan_usuario (pago_id_pago);
 
 CREATE INDEX recurso_bloque_idx ON public.recurso (bloque_contenido_id_bloque);
-CREATE INDEX evaluacion_contenido_idx ON public.evaluacion (contenido_id_contenido);
+CREATE INDEX evaluacion_contenido_idx ON public.evaluacion (modulo_id_modulo);
 CREATE INDEX intento_evaluacion_idx ON public.intento_evaluacion (evaluacion_id_evaluacion);
 CREATE INDEX respuesta_alternativa_idx ON public.respuesta_usuario (alternativa_id_alternativa);
 CREATE INDEX progreso_contenido_idx ON public.progreso_contenido (contenido_id_contenido);
@@ -440,6 +412,265 @@ CREATE INDEX progreso_contenido_idx ON public.progreso_contenido (contenido_id_c
 INSERT INTO public.rol_usuario (nombre_rol)
 VALUES
 ('administrador'),
-('usuario');
+('usuario'),
+('superadminstrador');
+
+INSERT INTO public.profesion (nombre_profesion) VALUES
+    ('Ingeniero/a Civil Informático/a'),
+    ('Ingeniero/a Comercial'),
+    ('Contador/a Auditor/a'),
+    ('Psicólogo/a'),
+    ('Abogado/a'),
+    ('Diseñador/a Gráfico/a'),
+    ('Enfermero/a'),
+    ('Arquitecto/a'),
+    ('Periodista / Comunicador/a Digital'),
+    ('Administrador/a de Empresas'),
+    ('Ingeniero/a Industrial'),
+    ('Médico/a Cirujano/a'),
+    ('Profesor/a / Docente'),
+    ('Trabajador/a Social'),
+    ('Kinesiólogo/a'),
+    ('Publicista / Especialista en Marketing'),
+    ('Nutricionista'),
+    ('Científico/a / Analista de Datos'),
+    ('Terapeuta Ocupacional'),
+    ('Administrador/a Gastronómico/a')
+ON CONFLICT (nombre_profesion) DO NOTHING;
+INSERT INTO public.area_de_trabajo (nombre_area) VALUES
+    ('Tecnología de la Información y Desarrollo de Software'),
+    ('Recursos Humanos y Gestión del Talento'),
+    ('Finanzas, Contabilidad y Auditoría'),
+    ('Marketing, Publicidad y Crecimiento (Growth)'),
+    ('Ventas y Desarrollo de Negocios'),
+    ('Operaciones y Logística'),
+    ('Salud y Servicios Sanitarios'),
+    ('Educación, Formación y EdTech'),
+    ('Legal, Asuntos Corporativos y Compliance'),
+    ('Administración General y Gestión Operativa'),
+    ('Servicio al Cliente y Experiencia del Usuario (CX)'),
+    ('Diseño, UX/UI y Creatividad Digital'),
+    ('Minería, Energía y Recursos Naturales'),
+    ('Construcción e Ingeniería Civil'),
+    ('Consultoría Estratégica y de Negocios'),
+    ('Comunicaciones, PR y Medios'),
+    ('Compras, Abastecimiento y Supply Chain'),
+    ('Innovación y Transformación Digital'),
+    ('Medio Ambiente, Sustentabilidad y ESG'),
+    ('Sector Público y Políticas Públicas')
+ON CONFLICT (nombre_area) DO NOTHING;
+
+INSERT INTO public.region (nombre_region) VALUES
+    ('Región de Arica y Parinacota'),
+    ('Región de Tarapacá'),
+    ('Región de Antofagasta'),
+    ('Región de Atacama'),
+    ('Región de Coquimbo'),
+    ('Región de Valparaíso'),
+    ('Región Metropolitana de Santiago'),
+    ('Región del Libertador General Bernardo O''Higgins'),
+    ('Región del Maule'),
+    ('Región de Ñuble'),
+    ('Región del Biobío'),
+    ('Región de La Araucanía'),
+    ('Región de Los Ríos'),
+    ('Región de Los Lagos'),
+    ('Región de Aysén del General Carlos Ibáñez del Campo'),
+    ('Región de Magallanes y de la Antártica Chilena')
+ON CONFLICT (nombre_region) DO NOTHING;
+
+INSERT INTO public.ciudad (nombre_ciudad, region_id_region) VALUES
+    -- 1: Arica y Parinacota
+    ('Arica', 1),
+    ('Putre', 1),
+    -- 2: Tarapacá
+    ('Iquique', 2),
+    ('Alto Hospicio', 2),
+    ('Pozo Almonte', 2),
+    -- 3: Antofagasta
+    ('Antofagasta', 3),
+    ('Calama', 3),
+    ('Tocopilla', 3),
+    ('Mejillones', 3),
+    -- 4: Atacama
+    ('Copiapó', 4),
+    ('Vallenar', 4),
+    ('Caldera', 4),
+    ('Chañaral', 4),
+    -- 5: Coquimbo
+    ('La Serena', 5),
+    ('Coquimbo', 5),
+    ('Ovalle', 5),
+    ('Illapel', 5),
+    -- 6: Valparaíso
+    ('Valparaíso', 6),
+    ('Viña del Mar', 6),
+    ('Quilpué', 6),
+    ('Villa Alemana', 6),
+    ('San Antonio', 6),
+    ('Quillota', 6),
+    ('Los Andes', 6),
+    ('San Felipe', 6),
+    -- 7: Metropolitana
+    ('Santiago', 7),
+    ('Providencia', 7),
+    ('Las Condes', 7),
+    ('Maipú', 7),
+    ('Puente Alto', 7),
+    ('Ñuñoa', 7),
+    ('La Florida', 7),
+    ('San Bernardo', 7),
+    ('Colina', 7),
+    ('Melipilla', 7),
+    ('Talagante', 7),
+    -- 8: O'Higgins
+    ('Rancagua', 8),
+    ('San Fernando', 8),
+    ('Rengo', 8),
+    ('Pichilemu', 8),
+    ('Santa Cruz', 8),
+    -- 9: Maule
+    ('Talca', 9),
+    ('Curicó', 9),
+    ('Linares', 9),
+    ('Cauquenes', 9),
+    ('Constitución', 9),
+    ('Molina', 9),
+    -- 10: Ñuble
+    ('Chillán', 10),
+    ('Chillán Viejo', 10),
+    ('San Carlos', 10),
+    ('Bulnes', 10),
+    ('Quirihue', 10),
+    -- 11: Biobío
+    ('Concepción', 11),
+    ('Talcahuano', 11),
+    ('Chiguayante', 11),
+    ('San Pedro de la Paz', 11),
+    ('Hualpén', 11),
+    ('Coronel', 11),
+    ('Lota', 11),
+    ('Tomé', 11),
+    ('Penco', 11),
+    ('Los Ángeles', 11),
+    ('Lebu', 11),
+    ('Arauco', 11),
+    -- 12: La Araucanía
+    ('Temuco', 12),
+    ('Padre Las Casas', 12),
+    ('Villarrica', 12),
+    ('Pucón', 12),
+    ('Angol', 12),
+    ('Victoria', 12),
+    -- 13: Los Ríos
+    ('Valdivia', 13),
+    ('La Unión', 13),
+    ('Río Bueno', 13),
+    ('Panguipulli', 13),
+    -- 14: Los Lagos
+    ('Puerto Montt', 14),
+    ('Osorno', 14),
+    ('Puerto Varas', 14),
+    ('Castro', 14),
+    ('Ancud', 14),
+    ('Frutillar', 14),
+    -- 15: Aysén
+    ('Coyhaique', 15),
+    ('Puerto Aysén', 15),
+    ('Chile Chico', 15),
+    -- 16: Magallanes
+    ('Punta Arenas', 16),
+    ('Puerto Natales', 16),
+    ('Porvenir', 16)
+ON CONFLICT (region_id_region, nombre_ciudad) DO NOTHING;
+
+INSERT INTO public.usuario (
+  correo,
+  "contraseña",
+  run,
+  nombre,
+  apellido_paterno,
+  apellido_materno,
+  fecha_nacimiento,
+  genero,
+  estado_usuario,
+  telefono,
+  profesion_id_profesion,
+  area_de_trabajo_id_area,
+  ciudad_id_ciudad,
+  rol_usuario_id_rol
+)
+VALUES (
+  'admin@test.com',
+  '$2a$10$22characterlongsalts1uzFFPfS.lyzYNmT0c3i.lWjG4JPFFL7O', 
+  '11111111-1',
+  'Administrador',
+  'Principal',
+  'Sistema',
+  '1990-01-01',
+  'Otros',
+  'activo',
+  '+56911111111',
+  1,
+  1,
+  1,
+  1 
+)
+ON CONFLICT (run) DO UPDATE SET 
+  "contraseña" = EXCLUDED."contraseña",
+  correo = EXCLUDED.correo,
+  estado_usuario = 'activo',
+  rol_usuario_id_rol = 1;
+
+INSERT INTO public.usuario (
+  correo,
+  "contraseña",
+  run,
+  nombre,
+  apellido_paterno,
+  apellido_materno,
+  fecha_nacimiento,
+  genero,
+  estado_usuario,
+  telefono,
+  profesion_id_profesion,
+  area_de_trabajo_id_area,
+  ciudad_id_ciudad,
+  rol_usuario_id_rol
+)
+VALUES (
+  'usuario@test.com',
+  '$2a$10$22characterlongsalts1uzFFPfS.lyzYNmT0c3i.lWjG4JPFFL7O', 
+  '22222222-2',
+  'Juan',
+  'Pérez',
+  'Gómez',
+  '1995-05-15',
+  'Masculino',
+  'activo',
+  '+56922222222',
+  1,
+  1,
+  1,
+  2 
+)
+ON CONFLICT (run) DO UPDATE SET 
+  "contraseña" = EXCLUDED."contraseña",
+  correo = EXCLUDED.correo,
+  estado_usuario = 'activo',
+  rol_usuario_id_rol = 2;
+
+
+INSERT INTO public.perfil_profesional (usuario_id_usuario)
+SELECT id_usuario FROM public.usuario WHERE run IN ('11111111-1', '22222222-2')
+ON CONFLICT DO NOTHING;
+
+
+INSERT INTO public.progreso_contenido (usuario_id_usuario, contenido_id_contenido, estado_progreso)
+SELECT u.id_usuario, c.id_contenido, 'no_completado'
+FROM public.usuario u
+CROSS JOIN public.contenido c
+WHERE u.run IN ('11111111-1', '22222222-2')
+ON CONFLICT DO NOTHING;
 
 COMMIT;

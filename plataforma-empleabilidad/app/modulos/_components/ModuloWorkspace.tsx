@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import TarjetaProgreso from '../_components/TarjetaProgreso';
 
 interface Contenido {
   id_contenido: number;
@@ -13,12 +14,24 @@ interface Contenido {
   bloqueado?: boolean;
 }
 
+interface Evaluacion {
+  id_evaluacion: number;
+  titulo_evaluacion: string;
+  descripcion_evaluacion?: string;
+  duracion_minutos: number;
+  porcentaje_minimo_aprobacion: number;
+  orden_evaluacion: number;
+  estado?: string;
+  bloqueado?: boolean;
+}
+
 interface Modulo {
   id_modulo: number;
   titulo: string;
   descripcion: string;
   posicion: number;
   contenidos: Contenido[];
+  evaluaciones?: Evaluacion[];
   estado?: string;
   bloqueado?: boolean;
   totalContenidos?: number;
@@ -30,6 +43,27 @@ interface ResumenProgreso {
   leccionesCompletadas: number;
   porcentajeGlobal: number;
 }
+
+type ItemModuloUnificado =
+  | {
+      tipo: 'leccion';
+      id: number;
+      orden: number;
+      titulo: string;
+      duracion?: number;
+      estado?: string;
+      bloqueado?: boolean;
+    }
+  | {
+      tipo: 'evaluacion';
+      id: number;
+      orden: number;
+      titulo: string;
+      duracion_minutos: number;
+      porcentaje_minimo_aprobacion: number;
+      estado?: string;
+      bloqueado?: boolean;
+    };
 
 export default function ModuloWorkspace() {
   const [nombreUsuario, setNombreUsuario] = useState<string>('Usuario');
@@ -67,7 +101,6 @@ export default function ModuloWorkspace() {
           setResumen(data.resumenProgreso);
         }
 
-        // Abre automáticamente el primer módulo disponible que no esté bloqueado
         const primerModuloDesbloqueado = modulosObtenidos.find((m) => !m.bloqueado);
         if (primerModuloDesbloqueado) {
           setModulosAbiertos({ [primerModuloDesbloqueado.id_modulo]: true });
@@ -83,7 +116,7 @@ export default function ModuloWorkspace() {
   }, []);
 
   const toggleModulo = (id_modulo: number, estaBloqueado?: boolean) => {
-    if (estaBloqueado) return; 
+    if (estaBloqueado) return;
     setModulosAbiertos((prev) => ({
       ...prev,
       [id_modulo]: !prev[id_modulo],
@@ -117,24 +150,13 @@ export default function ModuloWorkspace() {
             Estás en un buen momento para impulsar tu carrera. Continúa con tu ruta de aprendizaje.
           </p>
         </div>
-        <div className="w-full md:w-1/3 flex flex-col gap-2 min-w-[250px]">
-          <div className="flex justify-between items-end">
-            <span className="text-xs font-bold text-[#002547]">Progreso General</span>
-            <span className="text-xs font-extrabold text-[#38BDF5]">
-              {resumen.porcentajeGlobal}%
-            </span>
-          </div>
-          <div className="w-full h-2 bg-[#E6F2FB] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-[#38BDF5] to-[#002547] rounded-full transition-all duration-500"
-              style={{ width: `${resumen.porcentajeGlobal}%` }}
-            />
-          </div>
-          {/* Muestra total de contenidos completados */}
-          <span className="text-[11px] font-medium text-[#42474f] text-right">
-            {resumen.leccionesCompletadas} de {resumen.totalLecciones} contenidos completados
-          </span>
-        </div>
+
+        <TarjetaProgreso
+          variant="banner"
+          porcentaje={resumen.porcentajeGlobal}
+          completados={resumen.leccionesCompletadas}
+          total={resumen.totalLecciones}
+        />
       </section>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -153,9 +175,35 @@ export default function ModuloWorkspace() {
               modulos.map((modulo, index) => {
                 const numeroModulo = index + 1;
                 const estaDesplegado = Boolean(modulosAbiertos[modulo.id_modulo]);
-                const tieneContenidos = modulo.contenidos && modulo.contenidos.length > 0;
                 const esCompletado = modulo.estado === 'completado';
                 const estaBloqueado = Boolean(modulo.bloqueado);
+
+                const leccionesMapeadas: ItemModuloUnificado[] = (modulo.contenidos || []).map((c) => ({
+                  tipo: 'leccion',
+                  id: c.id_contenido,
+                  orden: c.orden || 1,
+                  titulo: c.titulo,
+                  duracion: c.duracion,
+                  estado: c.estado,
+                  bloqueado: c.bloqueado,
+                }));
+
+                const evaluacionesMapeadas: ItemModuloUnificado[] = (modulo.evaluaciones || []).map((e) => ({
+                  tipo: 'evaluacion',
+                  id: e.id_evaluacion,
+                  orden: e.orden_evaluacion || 1,
+                  titulo: e.titulo_evaluacion,
+                  duracion_minutos: e.duracion_minutos,
+                  porcentaje_minimo_aprobacion: Number(e.porcentaje_minimo_aprobacion),
+                  estado: e.estado,
+                  bloqueado: e.bloqueado,
+                }));
+
+                const contenidosUnificados = [...leccionesMapeadas, ...evaluacionesMapeadas].sort(
+                  (a, b) => a.orden - b.orden
+                );
+
+                const totalItems = contenidosUnificados.length;
 
                 return (
                   <article
@@ -168,6 +216,7 @@ export default function ModuloWorkspace() {
                         : 'border-l-4 border-l-[#002547] border-t border-r border-b border-[#E6F2FB]'
                     }`}
                   >
+                    {/* Cabecera Módulo */}
                     <div
                       onClick={() => toggleModulo(modulo.id_modulo, estaBloqueado)}
                       className={`p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 select-none ${
@@ -219,8 +268,7 @@ export default function ModuloWorkspace() {
                                 : 'En curso'}
                             </span>
                             <span className="text-xs text-[#737780]">
-                              {modulo.contenidosCompletados || 0} de {modulo.contenidos.length}{' '}
-                              completados
+                              {modulo.contenidosCompletados || 0} de {totalItems} completados
                             </span>
                           </div>
                           <h3
@@ -250,68 +298,133 @@ export default function ModuloWorkspace() {
                     {estaDesplegado && !estaBloqueado && (
                       <div className="border-t border-[#E6F2FB] bg-[#F8FAFC] p-4 sm:p-6 flex flex-col gap-3">
                         <h4 className="text-xs font-bold uppercase tracking-wider text-[#006689] mb-1">
-                          Contenidos del Módulo
+                          CONTENIDOS DEL MÓDULO
                         </h4>
 
-                        {!tieneContenidos ? (
+                        {contenidosUnificados.length === 0 ? (
                           <p className="text-xs text-[#737780] italic">
-                            No hay lecciones ni contenidos asignados a este módulo todavía.
+                            No hay lecciones ni evaluaciones asignadas a este módulo todavía.
                           </p>
                         ) : (
-                          modulo.contenidos.map((contenido, idx) => {
-                            const leccionCompletada = contenido.estado === 'completado';
-                            const contenidoBloqueado = Boolean(contenido.bloqueado);
+                          contenidosUnificados.map((item) => {
+                            if (item.tipo === 'leccion') {
+                              const leccionCompletada = item.estado === 'completado';
+                              const contenidoBloqueado = Boolean(item.bloqueado);
+
+                              return (
+                                <div
+                                  key={`l_${item.id}`}
+                                  className={`bg-white p-4 rounded-lg border flex items-center justify-between gap-4 transition-colors ${
+                                    contenidoBloqueado
+                                      ? 'border-slate-200 bg-slate-50/70'
+                                      : 'border-[#E2E8F0] hover:border-[#38BDF5]'
+                                  }`}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <span
+                                      className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${
+                                        contenidoBloqueado
+                                          ? 'bg-slate-200 text-slate-400'
+                                          : leccionCompletada
+                                          ? 'bg-[#E6F2FB] text-[#006689]'
+                                          : 'bg-[#E6F2FB] text-[#002547]'
+                                      }`}
+                                    >
+                                      {contenidoBloqueado ? (
+                                        <span className="material-symbols-outlined text-sm">
+                                          lock
+                                        </span>
+                                      ) : leccionCompletada ? (
+                                        <span className="material-symbols-outlined text-sm">
+                                          check
+                                        </span>
+                                      ) : (
+                                        item.orden
+                                      )}
+                                    </span>
+                                    <div>
+                                      <h5
+                                        className={`text-sm font-semibold ${
+                                          contenidoBloqueado
+                                            ? 'text-slate-400'
+                                            : 'text-[#002547]'
+                                        }`}
+                                      >
+                                        {item.titulo}
+                                      </h5>
+                                      {item.duracion && (
+                                        <span className="text-xs text-[#737780]">
+                                          Duración estimada: {item.duracion} min
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {contenidoBloqueado ? (
+                                    <button
+                                      disabled
+                                      className="px-3 py-1.5 bg-slate-200 text-slate-400 font-semibold text-xs rounded-md cursor-not-allowed whitespace-nowrap"
+                                    >
+                                      Bloqueado
+                                    </button>
+                                  ) : (
+                                    <Link
+                                      href={`/modulos/${modulo.id_modulo}/contenido/${item.id}`}
+                                      className="px-3.5 py-1.5 bg-[#002547] text-white font-semibold text-xs rounded-md hover:bg-[#2566A8] transition-colors whitespace-nowrap"
+                                    >
+                                      Ver Contenido
+                                    </Link>
+                                  )}
+                                </div>
+                              );
+                            }
+
+                            const evaluacionBloqueada = Boolean(item.bloqueado);
 
                             return (
                               <div
-                                key={contenido.id_contenido}
+                                key={`t_${item.id}`}
                                 className={`bg-white p-4 rounded-lg border flex items-center justify-between gap-4 transition-colors ${
-                                  contenidoBloqueado
+                                  evaluacionBloqueada
                                     ? 'border-slate-200 bg-slate-50/70'
-                                    : 'border-[#E2E8F0] hover:border-[#38BDF5]'
+                                    : 'border-indigo-200 hover:border-indigo-400'
                                 }`}
                               >
                                 <div className="flex items-center gap-3">
-                                  <span
-                                    className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${
-                                      contenidoBloqueado
-                                        ? 'bg-slate-200 text-slate-400'
-                                        : leccionCompletada
-                                        ? 'bg-[#E6F2FB] text-[#006689]'
-                                        : 'bg-[#E6F2FB] text-[#002547]'
-                                    }`}
-                                  >
-                                    {contenidoBloqueado ? (
-                                      <span className="material-symbols-outlined text-sm">
-                                        lock
-                                      </span>
-                                    ) : leccionCompletada ? (
-                                      <span className="material-symbols-outlined text-sm">
-                                        check
-                                      </span>
-                                    ) : (
-                                      idx + 1
-                                    )}
-                                  </span>
+                                  <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-extrabold text-xs shrink-0 border border-indigo-100">
+                                    <span className="material-symbols-outlined text-base">
+                                      quiz
+                                    </span>
+                                  </div>
                                   <div>
-                                    <h5
-                                      className={`text-sm font-semibold ${
-                                        contenidoBloqueado
-                                          ? 'text-slate-400'
-                                          : 'text-[#002547]'
-                                      }`}
-                                    >
-                                      {contenido.titulo}
-                                    </h5>
-                                    {contenido.duracion && (
-                                      <span className="text-xs text-[#737780]">
-                                        Duración estimada: {contenido.duracion} min
+                                    <div className="flex items-center gap-2">
+                                      <span className="w-5 h-5 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-bold flex items-center justify-center">
+                                        {item.orden}
                                       </span>
-                                    )}
+                                      <h5
+                                        className={`text-sm font-bold ${
+                                          evaluacionBloqueada
+                                            ? 'text-slate-400'
+                                            : 'text-[#002547]'
+                                        }`}
+                                      >
+                                        {item.titulo}
+                                      </h5>
+                                      <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-indigo-100 text-indigo-800">
+                                        TEST
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-[#737780] mt-0.5">
+                                      <span>{item.duracion_minutos} min límite</span>
+                                      <span>•</span>
+                                      <span>
+                                        Exigencia {item.porcentaje_minimo_aprobacion.toFixed(2)}%
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
 
-                                {contenidoBloqueado ? (
+                                {evaluacionBloqueada ? (
                                   <button
                                     disabled
                                     className="px-3 py-1.5 bg-slate-200 text-slate-400 font-semibold text-xs rounded-md cursor-not-allowed whitespace-nowrap"
@@ -320,10 +433,10 @@ export default function ModuloWorkspace() {
                                   </button>
                                 ) : (
                                   <Link
-                                    href={`/modulos/${modulo.id_modulo}/contenido/${contenido.id_contenido}`}
-                                    className="px-3 py-1.5 bg-[#002547] text-white font-semibold text-xs rounded-md hover:bg-[#2566A8] transition-colors whitespace-nowrap"
+                                    href={`/modulos/evaluaciones/${item.id}`}
+                                    className="px-4 py-1.5 bg-[#002547] hover:bg-[#2566A8] text-white font-bold text-xs rounded-md transition-colors whitespace-nowrap"
                                   >
-                                    Ver Contenido
+                                    Rendir Test
                                   </Link>
                                 )}
                               </div>
