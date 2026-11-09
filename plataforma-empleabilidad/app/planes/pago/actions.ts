@@ -2,11 +2,20 @@
 
 import { redirect } from 'next/navigation';
 import { obtenerSesionActual } from '@/lib/auth';
-import { esMetodoPago } from '@/lib/planes';
+import {
+  crearPagoPendientePlan,
+  guardarTokenPago,
+  marcarPagoRechazado,
+  obtenerPlanPro,
+} from '@/lib/pagos';
 import { RUTA_CHECKOUT } from '@/lib/redirect';
 import { tienePlanActivo } from '@/lib/suscripcion';
+import { RUTA_RETORNO_WEBPAY, transaccionWebpay, urlApp } from '@/lib/transbank';
 
-export type EstadoPago = { error: string } | null;
+// Lo que la acción le devuelve al formulario:
+// - error: se muestra en pantalla
+// - url + token: el formulario redirige al usuario a Webpay
+export type EstadoPago = { error: string } | { url: string; token: string } | null;
 
 // Se llama al pulsar "Continuar al pago".
 // Una Server Action es un endpoint POST público, así que se vuelve a validar
@@ -17,21 +26,38 @@ export async function iniciarPago(_previo: EstadoPago, formData: FormData): Prom
     redirect(`/inicio_sesion?next=${encodeURIComponent(RUTA_CHECKOUT)}`);
   }
 
-  const metodo = formData.get('metodo');
-  if (!esMetodoPago(metodo)) {
-    return { error: 'Selecciona tarjeta de crédito o de débito.' };
+  // Del navegador solo se acepta QUÉ plan eligió; el precio se lee de la BD.
+  const idPlan = Number(formData.get('plan'));
+  if (!Number.isInteger(idPlan) || idPlan <= 0) {
+    return { error: 'Selecciona un plan.' };
+  }
+  const plan = await obtenerPlanPro(idPlan);
+  if (!plan) {
+    return { error: 'El plan seleccionado no existe.' };
   }
 
   if (await tienePlanActivo(sesion.id_usuario)) {
     return { error: 'Ya tienes el plan Pro activo.' };
   }
 
-  // TODO(proveedor de pagos): cuando se elija el proveedor, aquí se debe:
-  //   1. Insertar una fila en public.pago con estado 'pendiente' y tipo_pago = metodo.
-  //   2. Crear la transacción en el proveedor y redirigir a su URL de pago.
-  //   3. En la ruta de retorno/webhook, marcar el pago como 'aprobado' y crear
-  //      la fila en public.plan_usuario. Nunca activar el plan desde aquí.
-  // Mientras tanto la vista funciona en modo demostración: no se cobra ni se
-  // escribe nada en la base de datos.
-  redirect(`/planes/confirmacion?metodo=${metodo}&demo=1`);
+  // 1) Registrar el intento en la BD como 'pendiente'.
+  const { idPago, ordenCompra } = await crearPagoPendientePlan(sesion.id_usuario, plan);
+
+  // 2) Crear la transacción en Webpay (ambiente de integración: sin cobro real).
+  try {
+    const respuesta = await transaccionWebpay().create(
+      ordenCompra,
+      String(sesion.id_usuario), // sessionId: dato nuestro que Webpay devuelve en el commit
+      plan.costo,
+      `${urlApp()}${RUTA_RETORNO_WEBPAY}`
+    );
+
+    // 3) Guardar el token para reconocer el pago cuando Webpay devuelva al usuario.
+    await guardarTokenPago(idPago, respuesta.token);
+    return { url: respuesta.url, token: respuesta.token };
+  } catch (error) {
+    console.error('Error al crear la transacción en Webpay', error);
+    await marcarPagoRechazado(idPago, 'No se pudo crear la transacción en Webpay');
+    return { error: 'No pudimos conectar con Webpay. Intenta de nuevo en unos minutos.' };
+  }
 }
