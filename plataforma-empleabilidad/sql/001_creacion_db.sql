@@ -231,6 +231,32 @@ CONSTRAINT recurso_tamano_ck
 
 );
 
+CREATE TABLE public.formulario_leccion (
+    id_formulario INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    titulo_formulario VARCHAR(200),
+    descripcion_formulario TEXT,
+    fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    contenido_id_contenido INTEGER NOT NULL UNIQUE 
+        REFERENCES public.contenido (id_contenido) ON DELETE CASCADE,
+    usuario_id_admin INTEGER NOT NULL 
+        REFERENCES public.usuario (id_usuario) ON DELETE CASCADE
+);
+
+CREATE TABLE public.mensaje_contacto (
+    id_mensaje INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    asunto VARCHAR(200),
+    mensaje TEXT NOT NULL,
+    fecha_envio TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado_mensaje VARCHAR(20) NOT NULL DEFAULT 'no_leido' 
+        CHECK (estado_mensaje IN ('no leido', 'leido', 'respondido')),
+    contenido_id_contenido INTEGER NOT NULL 
+        REFERENCES public.contenido (id_contenido) ON DELETE CASCADE,
+    usuario_id_remitente INTEGER NOT NULL 
+        REFERENCES public.usuario (id_usuario) ON DELETE CASCADE,
+    usuario_id_destinatario INTEGER NOT NULL 
+        REFERENCES public.usuario (id_usuario) ON DELETE CASCADE
+);
+
 -- Planes y pagos (Webpay Plus)
 --   * Usuario natural: compra el plan Pro (todos los módulos) por 6 o 12 meses.
 --   * Empresa: compra cupos de un módulo por 6 o 12 meses; cada cupo es un código
@@ -512,22 +538,18 @@ CREATE INDEX usuario_profesion_idx ON public.usuario (profesion_id_profesion);
 CREATE INDEX usuario_area_idx ON public.usuario (area_de_trabajo_id_area);
 CREATE INDEX usuario_ciudad_idx ON public.usuario (ciudad_id_ciudad);
 CREATE INDEX usuario_rol_idx ON public.usuario (rol_usuario_id_rol);
-
 CREATE INDEX perfil_profesional_usuario_idx ON public.perfil_profesional (usuario_id_usuario);
-
 CREATE INDEX pago_proveedor_idx ON public.pago (id_proveedor_pago);
 CREATE INDEX pago_codigo_transaccion_idx ON public.pago (codigo_transaccion);
-
 CREATE INDEX plan_usuario_usuario_idx ON public.plan_usuario (usuario_id_usuario);
 CREATE INDEX plan_usuario_plan_idx ON public.plan_usuario (plan_id_plan);
--- pago_id_pago no necesita índice aparte: la restricción plan_usuario_pago_uk (UNIQUE) ya crea uno.
-
+CREATE INDEX mensaje_contacto_destinatario_idx ON public.mensaje_contacto (usuario_id_destinatario);
+CREATE INDEX mensaje_contacto_remitente_idx ON public.mensaje_contacto (usuario_id_remitente);
 CREATE INDEX pago_usuario_idx ON public.pago (usuario_id_usuario);
 CREATE INDEX compra_modulo_empresa_idx ON public.compra_modulo (empresa_id_empresa);
 CREATE INDEX compra_modulo_modulo_idx ON public.compra_modulo (modulo_id_modulo);
 CREATE INDEX codigo_acceso_compra_idx ON public.codigo_acceso (compra_modulo_id_compra_modulo);
 CREATE INDEX codigo_acceso_usuario_idx ON public.codigo_acceso (usuario_id_usuario);
-
 CREATE INDEX recurso_bloque_idx ON public.recurso (bloque_contenido_id_bloque);
 CREATE INDEX evaluacion_contenido_idx ON public.evaluacion (modulo_id_modulo);
 CREATE INDEX intento_evaluacion_idx ON public.intento_evaluacion (evaluacion_id_evaluacion);

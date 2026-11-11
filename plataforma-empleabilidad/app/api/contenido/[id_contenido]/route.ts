@@ -21,7 +21,6 @@ export async function GET(
       return NextResponse.json({ error: 'ID de contenido inválido' }, { status: 400 });
     }
 
-    // Obtiene el contenido actual
     let resContenido: { rows: any[] } = { rows: [] };
     try {
       resContenido = await query(
@@ -61,7 +60,6 @@ export async function GET(
     }
     const contenido = resContenido.rows[0];
 
-    // Bloques 
     let bloques: any[] = [];
     try {
       const resBloques = await query(
@@ -85,7 +83,6 @@ export async function GET(
       } catch (err) {}
     }
 
-    // Recursos descargables
     let recursos: any[] = [];
     try {
       const resRecursos = await query(
@@ -105,6 +102,19 @@ export async function GET(
         );
         recursos = resRecursos.rows;
       } catch (err) {}
+    }
+
+    let formulario: any = null;
+    try {
+      const resFormulario = await query(
+        `SELECT id_formulario, titulo_formulario, descripcion_formulario, usuario_id_admin
+         FROM public.formulario_leccion
+         WHERE contenido_id_contenido = $1;`,
+        [idContenido]
+      );
+      formulario = resFormulario.rows[0] || null;
+    } catch (e) {
+      formulario = null;
     }
 
     const modulosEstructurados = await obtenerEstructuraConBloqueos(sesion.id_usuario);
@@ -128,6 +138,7 @@ export async function GET(
       contenido,
       bloques,
       recursos,
+      formulario, 
       modulos: modulosEstructurados,
       navegacion: {
         anterior: itemAnterior

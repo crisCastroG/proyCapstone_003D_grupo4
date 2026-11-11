@@ -2,14 +2,16 @@
 
 import { useState, useTransition } from 'react';
 import { BloqueContenido } from '@/lib/types/bloque';
-import { crearBloqueAction, actualizarBloqueAction, eliminarBloqueAction } from './actions';
+import { crearBloqueAction, actualizarBloqueAction, eliminarBloqueAction, eliminarFormularioLeccionAction } from './actions';
 import { useUploadThing } from '@/lib/uploadthing';
+import FormularioContactoModal from './FormularioContactoModal';
 
 type Props = {
   bloques?: BloqueContenido[];
   bloquesIniciales?: BloqueContenido[];
   idModulo: number;
   idContenido: number;
+  formularioLeccion?: any; 
 };
 
 function obtenerUrlEmbed(url?: string): string | null {
@@ -34,6 +36,7 @@ export default function ListaBloques({
   bloquesIniciales,
   idModulo,
   idContenido,
+  formularioLeccion,
 }: Props) {
   const bloques = bloquesIniciales || propBloques || [];
 
@@ -142,6 +145,19 @@ export default function ListaBloques({
     });
   };
 
+  const handleEliminarFormulario = () => {
+    if (!formularioLeccion) return;
+    if (confirm('¿Estás seguro de quitar el formulario de contacto de esta lección?')) {
+      startTransition(async () => {
+        await eliminarFormularioLeccionAction(
+          formularioLeccion.id_formulario,
+          idContenido,
+          idModulo
+        );
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center justify-between gap-3 bg-[#f8fafc] p-2 rounded-xl border border-[#c3c6d0]/30">
@@ -149,10 +165,11 @@ export default function ListaBloques({
           <button
             type="button"
             onClick={() => setModoVista('editor')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${modoVista === 'editor'
-              ? 'bg-white text-[#002547] shadow-sm'
-              : 'text-[#737780] hover:text-[#002547]'
-              }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+              modoVista === 'editor'
+                ? 'bg-white text-[#002547] shadow-sm'
+                : 'text-[#737780] hover:text-[#002547]'
+            }`}
           >
             <span className="material-symbols-outlined text-base">edit_note</span>
             Modo Edición
@@ -164,10 +181,11 @@ export default function ListaBloques({
               setModoVista('previa');
               resetFormulario();
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${modoVista === 'previa'
-              ? 'bg-[#006689] text-white shadow-sm'
-              : 'text-[#737780] hover:text-[#002547]'
-              }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+              modoVista === 'previa'
+                ? 'bg-[#006689] text-white shadow-sm'
+                : 'text-[#737780] hover:text-[#002547]'
+            }`}
           >
             <span className="material-symbols-outlined text-base">visibility</span>
             Vista Previa Estudiante
@@ -175,20 +193,27 @@ export default function ListaBloques({
         </div>
 
         {modoVista === 'editor' && !mostrarFormCrear && (
-          <button
-            type="button"
-            onClick={() => {
-              setBloqueEditandoId(null);
-              setTipoBloque('texto');
-              setContenidoTexto('');
-              setErrorForm('');
-              setMostrarFormCrear(true);
-            }}
-            className="px-4 py-2 bg-[#006689] hover:bg-[#002547] text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
-          >
-            <span className="material-symbols-outlined text-base">add</span>
-            Añadir Bloque
-          </button>
+          <div className="flex items-center gap-2">
+            <FormularioContactoModal
+              idModulo={idModulo}
+              idContenido={idContenido}
+              formularioExistente={formularioLeccion}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setBloqueEditandoId(null);
+                setTipoBloque('texto');
+                setContenidoTexto('');
+                setErrorForm('');
+                setMostrarFormCrear(true);
+              }}
+              className="px-4 py-2 bg-[#006689] hover:bg-[#002547] text-white font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
+            >
+              <span className="material-symbols-outlined text-base">add</span>
+              Añadir Bloque
+            </button>
+          </div>
         )}
       </div>
 
@@ -231,7 +256,7 @@ export default function ListaBloques({
         </div>
       )}
 
-      {/* Formulario de Creación */}
+      {/* Formulario de creación de bloque */}
       {mostrarFormCrear && modoVista === 'editor' && (
         <div className="bg-[#e6f2fb]/40 rounded-xl border-2 border-[#006689] p-5 shadow-sm">
           <div className="flex justify-between items-center pb-3 border-b border-[#006689]/20 mb-4">
@@ -263,18 +288,21 @@ export default function ListaBloques({
         </div>
       )}
 
-      {/* Listado de Bloques */}
-      {bloques.length === 0 && !mostrarFormCrear ? (
+      {/* Estado sin bloques educativos */}
+      {bloques.length === 0 && !mostrarFormCrear && (
         <div className="bg-white rounded-xl border border-[#c3c6d0]/30 p-8 text-center shadow-sm">
           <div className="w-12 h-12 rounded-full bg-[#e6f2fb] text-[#006689] flex items-center justify-center mx-auto mb-3">
             <span className="material-symbols-outlined text-2xl">school</span>
           </div>
-          <h3 className="text-base font-bold text-[#002547]">Esta lección aún no tiene contenido</h3>
+          <h3 className="text-base font-bold text-[#002547]">Esta lección aún no tiene contenido explicativo</h3>
           <p className="text-xs text-[#737780] mt-1 max-w-md mx-auto">
-            Añade el primer bloque de texto, imagen, video o material descargable directamente usando el botón superior.
+            Añade bloques de texto, imagen, video o material descargable usando el botón superior.
           </p>
         </div>
-      ) : (
+      )}
+
+      {/* Listado de bloques educativos */}
+      {bloques.length > 0 && (
         <div className="flex flex-col gap-4">
           {bloques.map((bloque) => {
             const esModoEdicionInline = bloqueEditandoId === bloque.id_bloque;
@@ -320,10 +348,11 @@ export default function ListaBloques({
             return (
               <div
                 key={bloque.id_bloque}
-                className={`bg-white rounded-xl border transition-all ${modoVista === 'editor'
-                  ? 'border-[#c3c6d0]/40 p-5 shadow-sm'
-                  : 'border-[#E6F2FB] p-6 shadow-[0px_4px_20px_rgba(13,59,102,0.03)]'
-                  }`}
+                className={`bg-white rounded-xl border transition-all ${
+                  modoVista === 'editor'
+                    ? 'border-[#c3c6d0]/40 p-5 shadow-sm'
+                    : 'border-[#E6F2FB] p-6 shadow-[0px_4px_20px_rgba(13,59,102,0.03)]'
+                }`}
               >
                 {modoVista === 'editor' && (
                   <div className="flex items-center justify-between pb-3 border-b border-[#c3c6d0]/20 mb-4">
@@ -368,6 +397,7 @@ export default function ListaBloques({
                     {bloque.contenido_texto}
                   </div>
                 )}
+
                 {bloque.tipo_bloque === 'imagen' && (
                   <div className="flex flex-col gap-3">
                     {bloque.contenido_texto && (
@@ -471,6 +501,68 @@ export default function ListaBloques({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {formularioLeccion && (
+        <div className="bg-white rounded-xl border-2 border-dashed border-indigo-200 p-5 shadow-sm mt-2">
+          {modoVista === 'editor' ? (
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-extrabold shrink-0 border border-indigo-100">
+                  <span className="material-symbols-outlined text-xl">mail</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h5 className="text-sm font-bold text-[#002547]">
+                      {formularioLeccion.titulo_formulario || 'Formulario de Contacto'}
+                    </h5>
+                  </div>
+                  <p className="text-xs text-[#737780] mt-0.5">
+                    Destinatario: <strong>{formularioLeccion.nombre} {formularioLeccion.apellido_paterno}</strong> ({formularioLeccion.correo})
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <FormularioContactoModal
+                  idModulo={idModulo}
+                  idContenido={idContenido}
+                  formularioExistente={formularioLeccion}
+                />
+                <button
+                  type="button"
+                  onClick={handleEliminarFormulario}
+                  disabled={isPending}
+                  className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                  title="Eliminar formulario"
+                >
+                  <span className="material-symbols-outlined text-base">delete</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2 text-[#002547]">
+                <span className="material-symbols-outlined text-indigo-600 text-xl">mail</span>
+                <h3 className="text-sm font-bold">
+                  {formularioLeccion.titulo_formulario || 'Envíanos tu consulta'}
+                </h3>
+              </div>
+              {formularioLeccion.descripcion_formulario && (
+                <p className="text-xs text-[#737780]">
+                  {formularioLeccion.descripcion_formulario}
+                </p>
+              )}
+              <div className="bg-[#f8fafc] p-4 rounded-lg border border-[#c3c6d0]/30 flex flex-col gap-2 text-xs opacity-70 pointer-events-none">
+                <input type="text" placeholder="Asunto" disabled className="p-2 border rounded bg-white text-xs" />
+                <textarea placeholder="Escribe tu mensaje aquí..." disabled rows={3} className="p-2 border rounded bg-white text-xs" />
+                <button disabled className="self-end px-4 py-2 bg-[#002547] text-white rounded font-bold text-xs">
+                  Enviar Mensaje (Vista Previa Estudiante)
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -613,20 +705,22 @@ function FormularioBloqueInlineContent({
               <button
                 type="button"
                 onClick={() => setModoEntrada('url')}
-                className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${modoEfectivo === 'url'
-                  ? 'bg-[#006689] text-white'
-                  : 'text-[#737780] hover:bg-gray-100'
-                  }`}
+                className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
+                  modoEfectivo === 'url'
+                    ? 'bg-[#006689] text-white'
+                    : 'text-[#737780] hover:bg-gray-100'
+                }`}
               >
                 Enlace URL
               </button>
               <button
                 type="button"
                 onClick={() => setModoEntrada('archivo')}
-                className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${modoEfectivo === 'archivo'
-                  ? 'bg-[#006689] text-white'
-                  : 'text-[#737780] hover:bg-gray-100'
-                  }`}
+                className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${
+                  modoEfectivo === 'archivo'
+                    ? 'bg-[#006689] text-white'
+                    : 'text-[#737780] hover:bg-gray-100'
+                }`}
               >
                 Subir Archivo
               </button>
@@ -713,10 +807,10 @@ function FormularioBloqueInlineContent({
           {cargandoSubida
             ? 'Subiendo archivo...'
             : isPending
-              ? 'Guardando...'
-              : bloque
-                ? 'Guardar Cambios'
-                : 'Guardar Bloque'}
+            ? 'Guardando...'
+            : bloque
+            ? 'Guardar Cambios'
+            : 'Guardar Bloque'}
         </button>
       </div>
     </form>
