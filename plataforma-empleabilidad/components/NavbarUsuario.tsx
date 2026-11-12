@@ -5,12 +5,8 @@ import BotonCerrarSesion from "@/components/BotonCerrarSesion";
 type Seccion = "modulos" | "perfil" | "planes";
 
 const ENLACES: { seccion: Seccion; href: string; texto: string }[] = [
-  { seccion: "modulos", href: "/modulos", texto: "Módulos" },
-  { seccion: "perfil", href: "/perfil", texto: "Perfil Profesional" },
+  { seccion: "modulos", href: "/modulos", texto: "Módulos" }, 
 ];
-
-// Navbar para usuarios con sesión. Copia el diseño del header de app/modulos/layout.tsx.
-// "Ir al Admin" solo se muestra a administradores.
 export default function NavbarUsuario({
   sesion,
   activo,

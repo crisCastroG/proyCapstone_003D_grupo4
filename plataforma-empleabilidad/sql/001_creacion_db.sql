@@ -112,8 +112,10 @@ resumen TEXT,
 link_linkedin VARCHAR(255),
 qr TEXT,
 foto TEXT,
+habilidades TEXT[],
 fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 fecha_actualizacion TIMESTAMPTZ,
+token_publico UUID DEFAULT gen_random_uuid() UNIQUE,
 
 usuario_id_usuario INTEGER NOT NULL UNIQUE
     REFERENCES public.usuario (id_usuario) ON DELETE CASCADE

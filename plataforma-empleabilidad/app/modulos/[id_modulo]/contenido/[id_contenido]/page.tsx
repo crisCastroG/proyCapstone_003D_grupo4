@@ -92,7 +92,7 @@ export default function ContenidoViewPage() {
         setModulos(data.modulos || []);
         setBloques(data.bloques || []);
         setRecursos(data.recursos || []);
-        setFormulario(data.formulario || null); // <--- Guarda la configuración del formulario
+        setFormulario(data.formulario || null);
         setNavAnterior(data.navegacion?.anterior || null);
         setNavSiguiente(data.navegacion?.siguiente || null);
 
@@ -132,7 +132,12 @@ export default function ContenidoViewPage() {
         return;
       }
 
-      if (navSiguiente) {
+      if (navSiguiente) { 
+        if (navSiguiente.bloqueado) {
+          router.push('/planes');
+          return;
+        }
+
         const urlNext =
           navSiguiente.tipo === 'evaluacion'
             ? `/modulos/evaluaciones/${navSiguiente.id}`
@@ -174,7 +179,6 @@ export default function ContenidoViewPage() {
 
   return (
     <div className="flex flex-col md:flex-row gap-8 -mt-2">
-      {/* BARRA LATERAL IZQUIERDA UNIFICADA CON PROGRESO COMPLETO */}
       <SidebarNavegacion
         modulos={modulos}
         progresoGlobal={progresoGlobal}
@@ -322,7 +326,6 @@ export default function ContenidoViewPage() {
           )}
         </div>
 
-        {/* FORMULARIO DE CONTACTO AL FINAL DE LA LECCIÓN */}
         {formulario && (
           <FormularioContactoEstudiante
             idContenido={detalle.id_contenido}
@@ -332,7 +335,6 @@ export default function ContenidoViewPage() {
           />
         )}
 
-        {/* NAVEGACIÓN INFERIOR */}
         <footer className="mt-8 pt-6 border-t border-[#E2E8F0] flex items-center justify-between gap-4">
           {navAnterior && !navAnterior.bloqueado ? (
             <Link

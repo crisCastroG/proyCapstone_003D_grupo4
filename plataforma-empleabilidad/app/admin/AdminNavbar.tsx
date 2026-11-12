@@ -43,12 +43,6 @@ export default function AdminNavbar() {
           <span className="text-[11px] font-bold bg-[#E6F2FB] text-[#002546] px-3 py-1 rounded-full uppercase tracking-wider">
             SuperAdmin
           </span>
-          <button
-            aria-label="Notificaciones"
-            className="p-2 text-[#42474f] hover:bg-[#f1f4f6] rounded-full transition-colors"
-          >
-            <span className="material-symbols-outlined text-xl">notifications</span>
-          </button>
           <div className="w-9 h-9 rounded-full bg-[#002546] text-white flex items-center justify-center font-bold text-xs shadow-sm">
             AD
           </div>
