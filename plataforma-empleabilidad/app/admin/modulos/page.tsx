@@ -3,25 +3,25 @@ import FormularioModulo from './FormularioModulo';
 import ListaModulos from './ListaModulos';
 
 async function getModulosConTodo() {
-  // 1. Obtener todos los módulos
+  // Obtener todos los módulos
   const resModulos = await query(
     'SELECT * FROM modulo ORDER BY posicion_modulo ASC, id_modulo ASC'
   );
   const modulos = resModulos.rows;
 
-  // 2. Obtener todos los contenidos (lecciones)
+  // Obtener todos los contenidos 
   const resContenidos = await query(
     'SELECT * FROM contenido ORDER BY orden_contenido ASC'
   );
   const contenidos = resContenidos.rows;
 
-  // 3. Obtener todas las evaluaciones (tests)
+  // Obtener todas las evaluaciones
   const resEvaluaciones = await query(
     'SELECT * FROM evaluacion ORDER BY orden_evaluacion ASC'
   );
   const evaluaciones = resEvaluaciones.rows;
 
-  // 4. Agrupar lecciones y evaluaciones en sus respectivos módulos
+  // Agrupar lecciones y evaluaciones en sus respectivos módulos
   return modulos.map((mod: any) => ({
     ...mod,
     contenidos: contenidos.filter((c: any) => c.modulo_id_modulo === mod.id_modulo),
