@@ -10,7 +10,6 @@ type Props = {
 };
 
 export default function FormularioPago({ planes }: Props) {
-  // useActionState (React 19) conecta el formulario con la Server Action:
   // `estado` guarda lo que la acción devuelve (error o datos de Webpay) y
   // `pendiente` indica que la acción se está ejecutando, para deshabilitar el botón.
   const [estado, accion, pendiente] = useActionState(iniciarPago, null);

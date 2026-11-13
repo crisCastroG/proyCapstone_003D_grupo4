@@ -4,7 +4,6 @@ import NavbarPublica from '@/components/NavbarPublica';
 import NavbarUsuario from '@/components/NavbarUsuario';
 
 export default async function PlanesLayout({ children }: { children: ReactNode }) {
-  // /planes es pública: la sesión es opcional y solo cambia lo que muestra el header.
   const sesion = await obtenerSesionActual();
 
   return (

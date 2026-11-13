@@ -4,8 +4,7 @@ import { redirect } from 'next/navigation';
 import { obtenerSesionActual } from '@/lib/auth';
 import { tienePlanActivo } from '@/lib/suscripcion';
 import { RUTA_CHECKOUT } from '@/lib/redirect';
-import { PLAN_PRO } from '@/lib/planes';
-import { obtenerPlanesPro } from '@/lib/pagos';
+import { obtenerPlanesActivos } from '@/lib/planes-bd';
 import FormularioPago from './FormularioPago';
 
 export const metadata: Metadata = {
@@ -13,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PagoPage() {
-  // Esta ruta exige sesión. Si no hay, mandamos al login con ?next= para que
+  // Esta ruta exige sesión. Si no hay, mandamos al login para que
   // después del inicio de sesión el usuario vuelva aquí mismo.
   const sesion = await obtenerSesionActual();
   if (!sesion) {
@@ -23,8 +22,9 @@ export default async function PagoPage() {
     redirect('/planes');
   }
 
-  // Precios reales desde public.plan (Pro 6 meses / Pro 12 meses).
-  const planes = await obtenerPlanesPro();
+  // Planes de pago activos desde public.plan; el resumen muestra el destacado.
+  const planes = (await obtenerPlanesActivos()).filter((p) => p.costo > 0);
+  const planResumen = planes.find((p) => p.destacado) ?? planes[0];
 
   return (
     <div className="flex flex-col gap-6">
@@ -48,7 +48,7 @@ export default async function PagoPage() {
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wide text-[#42474f]">Tu selección</p>
               <h2 id="resumen-titulo" className="mt-1 text-xl font-extrabold text-[#002546]">
-                {PLAN_PRO.nombre}
+                {planResumen?.nombre ?? 'Plan Pro'}
               </h2>
               <p className="text-xs text-[#42474f]">Pago único · sin renovación automática</p>
             </div>
@@ -62,12 +62,12 @@ export default async function PagoPage() {
               Se activará apenas se apruebe el pago
             </p>
             <ul className="flex flex-col gap-2 text-sm">
-              {PLAN_PRO.beneficios.map((b) => (
-                <li key={b.texto} className="flex items-start gap-2">
+              {(planResumen?.beneficios ?? []).map((texto, i) => (
+                <li key={`${i}-${texto}`} className="flex items-start gap-2">
                   <span aria-hidden="true" className="material-symbols-outlined text-[18px] text-[#002546]">
                     check_circle
                   </span>
-                  {b.texto}
+                  {texto}
                 </li>
               ))}
             </ul>

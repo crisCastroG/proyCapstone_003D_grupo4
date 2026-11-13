@@ -278,6 +278,9 @@ nombre_plan VARCHAR(80) NOT NULL UNIQUE,
 costo_plan NUMERIC(12,2) NOT NULL,
 duracion_plan INTEGER NOT NULL DEFAULT 30, -- Duración en días
 descripcion_plan TEXT,
+beneficios TEXT[] NOT NULL DEFAULT '{}',
+destacado BOOLEAN NOT NULL DEFAULT FALSE,
+esta_activo BOOLEAN NOT NULL DEFAULT TRUE,
 
 CONSTRAINT plan_costo_ck
     CHECK (costo_plan >= 0),
@@ -574,11 +577,7 @@ INSERT INTO public.proveedor_pago (nombre_proveedor_pago)
 VALUES ('Transbank Webpay Plus')
 ON CONFLICT (nombre_proveedor_pago) DO NOTHING;
 
-INSERT INTO public.plan (nombre_plan, costo_plan, duracion_plan, descripcion_plan)
-VALUES
-('Pro 6 meses', 150000, 180, 'Acceso a todos los módulos por 6 meses.'),
-('Pro 12 meses', 250000, 365, 'Acceso a todos los módulos por 12 meses.')
-ON CONFLICT (nombre_plan) DO NOTHING;
+ INSERT INTO public.plan (nombre_plan, costo_plan, duracion_plan, descripcion_plan, beneficios, destacado) VALUES ('Plan Gratuito', 0, 30, 'Viene con tu cuenta. Conoce la plataforma con el módulo introductorio.', ARRAY['Acceso al módulo introductorio', 'Vista previa de todos los módulos'], FALSE), ('Pro 6 meses', 150000, 180, 'Acceso a todos los módulos por 6 meses.', ARRAY['Acceso a todos los módulos de contenido grabado', 'Pruebas de avance al final de cada módulo', 'Desbloqueo del siguiente módulo al aprobar con 80% o más'], FALSE), ('Pro 12 meses', 250000, 365, 'Acceso a todos los módulos por 12 meses.', ARRAY['Acceso a todos los módulos de contenido grabado', 'Pruebas de avance al final de cada módulo', 'Desbloqueo del siguiente módulo al aprobar con 80% o más'], TRUE) ON CONFLICT (nombre_plan) DO NOTHING;
 
 INSERT INTO public.profesion (nombre_profesion) VALUES
     ('Ingeniero/a Civil Informático/a'),

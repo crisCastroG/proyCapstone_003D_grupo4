@@ -18,8 +18,6 @@ import { RUTA_RETORNO_WEBPAY, transaccionWebpay, urlApp } from '@/lib/transbank'
 export type EstadoPago = { error: string } | { url: string; token: string } | null;
 
 // Se llama al pulsar "Continuar al pago".
-// Una Server Action es un endpoint POST público, así que se vuelve a validar
-// todo aquí, aunque la página ya lo haya hecho.
 export async function iniciarPago(_previo: EstadoPago, formData: FormData): Promise<EstadoPago> {
   const sesion = await obtenerSesionActual();
   if (!sesion) {
@@ -40,10 +38,10 @@ export async function iniciarPago(_previo: EstadoPago, formData: FormData): Prom
     return { error: 'Ya tienes el plan Pro activo.' };
   }
 
-  // 1) Registrar el intento en la BD como 'pendiente'.
+  // Registra el intento en la BD como 'pendiente'.
   const { idPago, ordenCompra } = await crearPagoPendientePlan(sesion.id_usuario, plan);
 
-  // 2) Crear la transacción en Webpay (ambiente de integración: sin cobro real).
+  // Crea la transacción en Webpay (ambiente de integración: sin cobro real).
   try {
     const respuesta = await transaccionWebpay().create(
       ordenCompra,
@@ -52,7 +50,7 @@ export async function iniciarPago(_previo: EstadoPago, formData: FormData): Prom
       `${urlApp()}${RUTA_RETORNO_WEBPAY}`
     );
 
-    // 3) Guardar el token para reconocer el pago cuando Webpay devuelva al usuario.
+    //  Guarda el token para reconocer el pago cuando Webpay devuelva al usuario.
     await guardarTokenPago(idPago, respuesta.token);
     return { url: respuesta.url, token: respuesta.token };
   } catch (error) {

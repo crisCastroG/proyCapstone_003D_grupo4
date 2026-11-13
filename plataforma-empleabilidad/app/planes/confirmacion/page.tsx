@@ -10,7 +10,6 @@ export const metadata: Metadata = {
 };
 
 type Props = {
-  // En Next 16, searchParams es una Promise y hay que esperarla con await.
   searchParams: Promise<{ [clave: string]: string | string[] | undefined }>;
 };
 

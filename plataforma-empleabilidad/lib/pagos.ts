@@ -27,22 +27,23 @@ function aPlanPro(fila: FilaPlan): PlanPro {
   };
 }
 
-// Planes Pro que se pueden comprar (por ahora "Pro 6 meses" y "Pro 12 meses").
+// Planes que se pueden comprar: de pago y activos.
 export async function obtenerPlanesPro(): Promise<PlanPro[]> {
   const res = await query(
     `SELECT id_plan, nombre_plan, costo_plan, duracion_plan, descripcion_plan
        FROM public.plan
-      WHERE nombre_plan LIKE 'Pro %'
+      WHERE costo_plan > 0 AND esta_activo
       ORDER BY duracion_plan`
   );
   return (res.rows as FilaPlan[]).map(aPlanPro);
 }
 
+// Lo usa la server action de pago: un plan gratuito o desactivado no se puede comprar.
 export async function obtenerPlanPro(idPlan: number): Promise<PlanPro | null> {
   const res = await query(
     `SELECT id_plan, nombre_plan, costo_plan, duracion_plan, descripcion_plan
        FROM public.plan
-      WHERE id_plan = $1 AND nombre_plan LIKE 'Pro %'`,
+      WHERE id_plan = $1 AND costo_plan > 0 AND esta_activo`,
     [idPlan]
   );
   const fila = res.rows[0] as FilaPlan | undefined;

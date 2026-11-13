@@ -176,7 +176,7 @@ export async function POST(request: Request) {
 
     await query(
       `INSERT INTO public.progreso_contenido (usuario_id_usuario, contenido_id_contenido, estado_progreso)
-       SELECT $1, id_contenido, 'no_iniciado'
+       SELECT $1, id_contenido, 'no_completado'
        FROM public.contenido
        ON CONFLICT DO NOTHING`,
       [nuevoUsuario.id_usuario]
