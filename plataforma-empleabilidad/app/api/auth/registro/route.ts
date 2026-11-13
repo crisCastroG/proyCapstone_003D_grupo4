@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
 import { formatearRut, validarRutChileno, validarPasswordSegura } from '@/lib/validators';
 import { crearTokenSesion } from '@/lib/auth';
+import { VERSION_TERMINOS } from '@/lib/terminos';
 
 export async function POST(request: Request) {
   try {
@@ -24,6 +25,7 @@ export async function POST(request: Request) {
       region_nombre,
       ciudad_nombre,
       password,
+      acepta_terminos,
     } = body;
 
     // 1. Validar campos obligatorios
@@ -44,12 +46,20 @@ export async function POST(request: Request) {
       );
     }
 
+    // 1.1 Los Términos y Condiciones deben aceptarse explícitamente (se valida aquí, no solo en el formulario)
+    if (acepta_terminos !== true) {
+      return NextResponse.json(
+        { error: 'Debes aceptar los Términos y Condiciones para crear tu cuenta.' },
+        { status: 400 }
+      );
+    }
+
     // 2. Validar género contra el dominio public.genero
     if (!['Femenino', 'Masculino', 'Otros'].includes(genero)) {
       return NextResponse.json({ error: 'Género seleccionado no válido.' }, { status: 400 });
     }
 
-    // 3. Validar RUN chileno (Módulo 11)
+    // 3. Validar RUN chileno 
     if (!validarRutChileno(run)) {
       return NextResponse.json(
         { error: 'El RUN ingresado no es válido (verifica el dígito verificador).' },
@@ -148,8 +158,9 @@ export async function POST(request: Request) {
       `INSERT INTO public.usuario (
         correo, "contraseña", run, nombre, apellido_paterno, apellido_materno,
         fecha_nacimiento, genero, telefono,
-        profesion_id_profesion, area_de_trabajo_id_area, ciudad_id_ciudad, rol_usuario_id_rol
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        profesion_id_profesion, area_de_trabajo_id_area, ciudad_id_ciudad, rol_usuario_id_rol,
+        terminos_aceptados_en, terminos_version
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP, $14)
       RETURNING id_usuario, run, nombre, apellido_paterno, correo`,
       [
         correoLimpio,
@@ -165,6 +176,7 @@ export async function POST(request: Request) {
         idAreaFinal,
         idCiudadFinal,
         idRolUsuario,
+        VERSION_TERMINOS,
       ]
     );
 

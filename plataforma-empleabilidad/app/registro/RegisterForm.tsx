@@ -85,6 +85,7 @@ export default function RegisterForm({ next }: { next?: string }) {
   const [errorCatalogos, setErrorCatalogos] = useState("");
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
@@ -167,6 +168,11 @@ export default function RegisterForm({ next }: { next?: string }) {
       return;
     }
 
+    if (!aceptaTerminos) {
+      setError("Debes aceptar los Términos y Condiciones para crear tu cuenta.");
+      return;
+    }
+
     setCargando(true);
     try {
       const res = await fetch("/api/auth/registro", {
@@ -174,6 +180,7 @@ export default function RegisterForm({ next }: { next?: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
+          acepta_terminos: aceptaTerminos,
           profesion_id_profesion: Number(profesionId),
           area_de_trabajo_id_area: Number(areaId),
           ciudad_id_ciudad: Number(ciudadId),
@@ -737,6 +744,38 @@ export default function RegisterForm({ next }: { next?: string }) {
               </ul>
             </div>
           </div>
+
+          <label
+            style={{
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "0.6rem",
+              fontSize: "0.9rem",
+              color: "#334155",
+              cursor: "pointer",
+            }}
+          >
+            <input
+              type="checkbox"
+              name="acepta_terminos"
+              required
+              checked={aceptaTerminos}
+              onChange={(e) => setAceptaTerminos(e.target.checked)}
+              style={{ marginTop: "0.2rem", width: "1rem", height: "1rem", flexShrink: 0 }}
+            />
+            <span>
+              He leído y acepto los{" "}
+              <Link
+                href="/terminos"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "#2566A8", fontWeight: 600 }}
+              >
+                Términos y Condiciones
+              </Link>
+              .
+            </span>
+          </label>
 
           <button
             type="submit"

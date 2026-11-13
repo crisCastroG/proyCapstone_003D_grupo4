@@ -83,6 +83,8 @@ fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 fecha_actualizacion TIMESTAMPTZ,
 fecha_desactivacion TIMESTAMPTZ,
 motivo_desactivacion TEXT,
+terminos_aceptados_en TIMESTAMPTZ,   -- cuándo aceptó los Términos y Condiciones al registrarse
+terminos_version VARCHAR(20),        -- versión de los términos que aceptó
 
 profesion_id_profesion INTEGER NOT NULL
     REFERENCES public.profesion (id_profesion),

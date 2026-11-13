@@ -22,6 +22,15 @@ export default function AdminNavbar() {
         {/* Navegación Desktop */}
         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
           <Link
+            href="/admin"
+            className={`pb-1 transition-all ${pathname === '/admin'
+                ? 'text-[#002546] border-b-2 border-[#002546] font-bold'
+                : 'text-[#42474f] hover:text-[#002546]'
+              }`}
+          >
+            Dashboard
+          </Link>
+          <Link
             href="/admin/modulos"
             className={`pb-1 transition-all ${pathname.startsWith('/admin/modulos')
                 ? 'text-[#002546] border-b-2 border-[#002546] font-bold'

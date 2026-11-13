@@ -11,3 +11,8 @@ export async function query(text: string, params?: any[]) {
   console.log('Query ejecutada', { text, duration, rows: res.rowCount });
   return res;
 }
+
+// Solo para pruebas y scripts: cierra las conexiones abiertas.
+export async function cerrarPool() {
+  await pool.end();
+}
