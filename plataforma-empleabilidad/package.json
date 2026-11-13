@@ -17,6 +17,7 @@
     "pg": "^8.23.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "transbank-sdk": "^6.1.1",
     "uploadthing": "^7.7.4"
   },
   "devDependencies": {

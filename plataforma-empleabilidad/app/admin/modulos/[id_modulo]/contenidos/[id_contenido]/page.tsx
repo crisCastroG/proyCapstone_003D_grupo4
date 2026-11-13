@@ -1,7 +1,11 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import ListaBloques from './ListaBloques';
-import { getBloquesPorContenido, getContenidoPorId } from './actions';
+import {
+  getBloquesPorContenido,
+  getContenidoPorId,
+  obtenerFormularioLeccionAction,
+} from './actions';
 import FormularioContenidoModal from '../../../FormularioContenidoModal';
 
 type PageProps = {
@@ -20,9 +24,10 @@ export default async function EditorBloquesPage({ params }: PageProps) {
     notFound();
   }
 
-  const [contenido, bloques] = await Promise.all([
+  const [contenido, bloques, resFormulario] = await Promise.all([
     getContenidoPorId(idContenidoNum),
     getBloquesPorContenido(idContenidoNum),
+    obtenerFormularioLeccionAction(idContenidoNum),
   ]);
 
   if (!contenido) {
@@ -31,7 +36,6 @@ export default async function EditorBloquesPage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col gap-6 p-6 max-w-6xl mx-auto">
-      {/* Navegación superior */}
       <div className="flex items-center justify-between border-b border-[#c3c6d0]/30 pb-4">
         <div className="flex items-center gap-2 text-xs text-[#737780]">
           <Link href="/admin/modulos" className="hover:text-[#006689] font-medium">
@@ -52,7 +56,6 @@ export default async function EditorBloquesPage({ params }: PageProps) {
         </Link>
       </div>
 
-      {/* Cabecera del Editor con Botón del Lápiz */}
       <div className="bg-white rounded-xl border border-[#c3c6d0]/30 p-6 shadow-sm flex items-start justify-between gap-4">
         <div>
           <span className="text-xs font-bold text-[#006689] uppercase tracking-wider">
@@ -77,11 +80,11 @@ export default async function EditorBloquesPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Lista de bloques usando el prop correcto 'bloques' */}
       <ListaBloques
         bloques={bloques}
         idModulo={idModuloNum}
         idContenido={idContenidoNum}
+        formularioLeccion={resFormulario?.formulario}
       />
     </div>
   );

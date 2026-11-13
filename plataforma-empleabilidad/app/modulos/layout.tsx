@@ -16,13 +16,9 @@ export default function ModulosLayout({ children }: { children: ReactNode }) {
             </span>
           </Link>
 
-          {/* Navegación ajustada a solo 3 opciones */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
             <Link href="/modulos" className="text-[#002546] border-b-2 border-[#002546] pb-1 font-bold">
               Módulos
-            </Link>
-            <Link href="/perfil" className="text-[#42474f] hover:text-[#002546] transition-colors">
-              Perfil Profesional
             </Link>
             <Link href="/admin" className="text-[#006689] font-bold hover:underline">
               Ir al Admin
@@ -30,12 +26,6 @@ export default function ModulosLayout({ children }: { children: ReactNode }) {
           </nav>
 
           <div className="flex items-center gap-3">
-            <button aria-label="Notificaciones" className="p-2 text-[#42474f] hover:bg-[#f1f4f6] rounded-full transition-colors">
-              <span className="material-symbols-outlined text-xl">notifications</span>
-            </button>
-            <button aria-label="Ajustes" className="p-2 text-[#42474f] hover:bg-[#f1f4f6] rounded-full transition-colors">
-              <span className="material-symbols-outlined text-xl">settings</span>
-            </button>
             <Link
               href="/modulos/cuenta"
               aria-label="Mi cuenta"

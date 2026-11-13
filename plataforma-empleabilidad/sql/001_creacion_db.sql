@@ -25,8 +25,9 @@ CHECK (VALUE IN ('Femenino', 'Masculino', 'Otros'));
 CREATE DOMAIN public.tipo_bloque AS VARCHAR(20)
 CHECK (VALUE IN ('descarga', 'imagen', 'texto', 'url', 'video'));
 
+-- Webpay informa crédito, débito o prepago.
 CREATE DOMAIN public.tipo_pago AS VARCHAR(20)
-CHECK (VALUE IN ('credito', 'debito'));
+CHECK (VALUE IN ('credito', 'debito', 'prepago'));
 
 -- Tablas maestras
 
@@ -113,76 +114,37 @@ resumen TEXT,
 link_linkedin VARCHAR(255),
 qr TEXT,
 foto TEXT,
+habilidades TEXT[],
 fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 fecha_actualizacion TIMESTAMPTZ,
+token_publico UUID DEFAULT gen_random_uuid() UNIQUE,
 
 usuario_id_usuario INTEGER NOT NULL UNIQUE
     REFERENCES public.usuario (id_usuario) ON DELETE CASCADE
 );
 
--- Planes y pagos
+-- Empresa: un usuario pasa a ser "Empresa" cuando el superadministrador
+-- lo agrega aquí con sus datos (nombre, razón social, RUT, giro, contacto).
+-- No hay un rol "empresa": lo que la marca como empresa es tener su fila aquí.
+-- Una fila por cuenta.
+CREATE TABLE public.empresa (
+id_empresa INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+nombre_empresa VARCHAR(200) NOT NULL,      -- nombre comercial (de fantasía)
+razon_social VARCHAR(200) NOT NULL,        -- nombre legal
+rut_empresa VARCHAR(12) NOT NULL UNIQUE,
+giro VARCHAR(200) NOT NULL,                -- actividad económica
+direccion VARCHAR(255) NOT NULL,
+telefono_contacto VARCHAR(20) NOT NULL,
+correo_contacto VARCHAR(254) NOT NULL,
 
-CREATE TABLE public.proveedor_pago (
-id_proveedor_pago INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-nombre_proveedor_pago VARCHAR(80) NOT NULL UNIQUE
-);
-
-CREATE TABLE public.plan (
-id_plan INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-nombre_plan VARCHAR(80) NOT NULL UNIQUE,
-costo_plan NUMERIC(12,2) NOT NULL,
-duracion_plan INTEGER NOT NULL DEFAULT 30, -- Duración en días
-descripcion_plan TEXT,
-
-CONSTRAINT plan_costo_ck
-    CHECK (costo_plan >= 0),
-CONSTRAINT plan_duracion_ck
-    CHECK (duracion_plan > 0)
-
-
-);
-
-CREATE TABLE public.pago (
-id_pago INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-monto_pago NUMERIC(12,2) NOT NULL,
-estado_pago public.estado_pago NOT NULL DEFAULT 'pendiente',
-codigo_transaccion VARCHAR(100), 
-
-fecha_pago TIMESTAMPTZ,
-
-fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-fecha_actualizacion TIMESTAMPTZ,
-respuesta_pago TEXT,
-
-tipo_pago public.tipo_pago NOT NULL,
-
-id_proveedor_pago INTEGER NOT NULL
-    REFERENCES public.proveedor_pago (id_proveedor_pago),
-
-CONSTRAINT pago_monto_ck
-    CHECK (monto_pago > 0)
-
-
-);
-
-CREATE TABLE public.plan_usuario (
-id_plan_usuario INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-fecha_inicio TIMESTAMPTZ NOT NULL,
-fecha_termino TIMESTAMPTZ NOT NULL,
-
-usuario_id_usuario INTEGER NOT NULL
+usuario_id_usuario INTEGER NOT NULL UNIQUE
     REFERENCES public.usuario (id_usuario),
 
-plan_id_plan INTEGER NOT NULL
-    REFERENCES public.plan (id_plan),
+fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-pago_id_pago INTEGER NOT NULL
-    REFERENCES public.pago (id_pago),
-
-CONSTRAINT plan_usuario_fechas_ck
-    CHECK (fecha_termino > fecha_inicio)
-
-
+-- Misma regla básica que usuario.correo: sin espacios al borde y no vacío.
+CONSTRAINT empresa_correo_basico_ck
+    CHECK (correo_contacto = BTRIM(correo_contacto) AND correo_contacto <> '')
 );
 
 -- Modulos y contenidos
@@ -271,6 +233,193 @@ CONSTRAINT recurso_tamano_ck
     CHECK (tamano_bytes >= 0)
 
 
+);
+
+CREATE TABLE public.formulario_leccion (
+    id_formulario INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    titulo_formulario VARCHAR(200),
+    descripcion_formulario TEXT,
+    fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    contenido_id_contenido INTEGER NOT NULL UNIQUE 
+        REFERENCES public.contenido (id_contenido) ON DELETE CASCADE,
+    usuario_id_admin INTEGER NOT NULL 
+        REFERENCES public.usuario (id_usuario) ON DELETE CASCADE
+);
+
+CREATE TABLE public.mensaje_contacto (
+    id_mensaje INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    asunto VARCHAR(200),
+    mensaje TEXT NOT NULL,
+    fecha_envio TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado_mensaje VARCHAR(20) NOT NULL DEFAULT 'no_leido' 
+        CHECK (estado_mensaje IN ('no leido', 'leido', 'respondido')),
+    contenido_id_contenido INTEGER NOT NULL 
+        REFERENCES public.contenido (id_contenido) ON DELETE CASCADE,
+    usuario_id_remitente INTEGER NOT NULL 
+        REFERENCES public.usuario (id_usuario) ON DELETE CASCADE,
+    usuario_id_destinatario INTEGER NOT NULL 
+        REFERENCES public.usuario (id_usuario) ON DELETE CASCADE
+);
+
+-- Planes y pagos (Webpay Plus)
+--   * Usuario natural: compra el plan Pro (todos los módulos) por 6 o 12 meses.
+--   * Empresa: compra cupos de un módulo por 6 o 12 meses; cada cupo es un código
+--     de acceso de un solo uso que queda ligado a la cuenta que lo canjea.
+-- Va después de "Modulos" porque precio_modulo y compra_modulo apuntan a modulo.
+
+CREATE TABLE public.proveedor_pago (
+id_proveedor_pago INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+nombre_proveedor_pago VARCHAR(80) NOT NULL UNIQUE
+);
+
+CREATE TABLE public.plan (
+id_plan INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+nombre_plan VARCHAR(80) NOT NULL UNIQUE,
+costo_plan NUMERIC(12,2) NOT NULL,
+duracion_plan INTEGER NOT NULL DEFAULT 30, -- Duración en días
+descripcion_plan TEXT,
+
+CONSTRAINT plan_costo_ck
+    CHECK (costo_plan >= 0),
+CONSTRAINT plan_duracion_ck
+    CHECK (duracion_plan > 0)
+
+
+);
+
+-- Precio por cupo de cada módulo, a 6 o 12 meses.
+-- Cada módulo de pago necesita sus 2 filas aquí.
+CREATE TABLE public.precio_modulo (
+id_precio_modulo INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+modulo_id_modulo INTEGER NOT NULL
+    REFERENCES public.modulo (id_modulo),
+
+duracion_meses INTEGER NOT NULL,
+precio_cupo NUMERIC(12,2) NOT NULL,
+esta_activo BOOLEAN NOT NULL DEFAULT TRUE,
+
+CONSTRAINT precio_modulo_meses_ck
+    CHECK (duracion_meses IN (6, 12)),
+CONSTRAINT precio_modulo_precio_ck
+    CHECK (precio_cupo > 0),
+CONSTRAINT precio_modulo_uk
+    UNIQUE (modulo_id_modulo, duracion_meses)
+);
+
+-- pago: quién paga, datos de Webpay y QUÉ se está comprando.
+-- Lo comprado se guarda en el pago porque la compra (plan_usuario o
+-- compra_modulo) se crea recién cuando Webpay aprueba.
+CREATE TABLE public.pago (
+id_pago INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+monto_pago NUMERIC(12,2) NOT NULL,
+estado_pago public.estado_pago NOT NULL DEFAULT 'pendiente',
+codigo_transaccion VARCHAR(100),
+
+fecha_pago TIMESTAMPTZ,
+
+fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+fecha_actualizacion TIMESTAMPTZ,
+respuesta_pago TEXT,
+
+tipo_pago public.tipo_pago,                 -- se conoce recién en el commit de Webpay
+
+id_proveedor_pago INTEGER NOT NULL
+    REFERENCES public.proveedor_pago (id_proveedor_pago),
+
+usuario_id_usuario INTEGER NOT NULL
+    REFERENCES public.usuario (id_usuario),
+orden_compra VARCHAR(26) NOT NULL,          -- buy_order de Webpay (máx. 26)
+token_ws VARCHAR(64),                       -- llega en create
+codigo_autorizacion VARCHAR(10),            -- llega en commit
+
+-- Lo comprado: un plan (usuario natural) O un módulo con cupos (empresa)
+plan_id_plan INTEGER
+    REFERENCES public.plan (id_plan),
+precio_modulo_id_precio_modulo INTEGER
+    REFERENCES public.precio_modulo (id_precio_modulo),
+cantidad_cupos INTEGER,
+
+CONSTRAINT pago_monto_ck
+    CHECK (monto_pago > 0),
+CONSTRAINT pago_orden_compra_uk
+    UNIQUE (orden_compra),
+CONSTRAINT pago_token_ws_uk
+    UNIQUE (token_ws),
+CONSTRAINT pago_que_se_compra_ck CHECK (
+    (plan_id_plan IS NOT NULL
+        AND precio_modulo_id_precio_modulo IS NULL
+        AND cantidad_cupos IS NULL)
+ OR (plan_id_plan IS NULL
+        AND precio_modulo_id_precio_modulo IS NOT NULL
+        AND cantidad_cupos > 0)
+)
+);
+
+CREATE TABLE public.plan_usuario (
+id_plan_usuario INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+fecha_inicio TIMESTAMPTZ NOT NULL,
+fecha_termino TIMESTAMPTZ NOT NULL,
+
+usuario_id_usuario INTEGER NOT NULL
+    REFERENCES public.usuario (id_usuario),
+
+plan_id_plan INTEGER NOT NULL
+    REFERENCES public.plan (id_plan),
+
+pago_id_pago INTEGER NOT NULL
+    REFERENCES public.pago (id_pago),
+
+CONSTRAINT plan_usuario_fechas_ck
+    CHECK (fecha_termino > fecha_inicio),
+
+-- Un pago activa como máximo UN período de plan
+-- (si el commit se procesa dos veces, no se duplica el acceso).
+CONSTRAINT plan_usuario_pago_uk
+    UNIQUE (pago_id_pago)
+);
+
+-- Compra de un módulo por una empresa (se crea cuando Webpay aprueba).
+CREATE TABLE public.compra_modulo (
+id_compra_modulo INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+empresa_id_empresa INTEGER NOT NULL
+    REFERENCES public.empresa (id_empresa),
+modulo_id_modulo INTEGER NOT NULL
+    REFERENCES public.modulo (id_modulo),
+pago_id_pago INTEGER NOT NULL UNIQUE
+    REFERENCES public.pago (id_pago),
+
+cantidad_cupos INTEGER NOT NULL,
+fecha_inicio TIMESTAMPTZ NOT NULL,
+fecha_termino TIMESTAMPTZ NOT NULL,
+
+CONSTRAINT compra_modulo_cupos_ck
+    CHECK (cantidad_cupos > 0),
+CONSTRAINT compra_modulo_fechas_ck
+    CHECK (fecha_termino > fecha_inicio)
+);
+
+-- Códigos de acceso: uno por cupo. Libre mientras usuario_id_usuario es NULL;
+-- al canjearlo queda ligado a esa cuenta para siempre.
+CREATE TABLE public.codigo_acceso (
+id_codigo_acceso INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+compra_modulo_id_compra_modulo INTEGER NOT NULL
+    REFERENCES public.compra_modulo (id_compra_modulo),
+
+codigo VARCHAR(20) NOT NULL UNIQUE,
+
+usuario_id_usuario INTEGER              -- quién lo canjeó (NULL = libre)
+    REFERENCES public.usuario (id_usuario),
+fecha_canje TIMESTAMPTZ,
+
+-- Canjeado = tiene usuario Y fecha; libre = ninguno de los dos.
+CONSTRAINT codigo_acceso_canje_ck
+    CHECK ((usuario_id_usuario IS NULL) = (fecha_canje IS NULL)),
+-- Una misma persona no puede ocupar dos cupos de la misma compra.
+CONSTRAINT codigo_acceso_un_cupo_por_usuario_uk
+    UNIQUE (compra_modulo_id_compra_modulo, usuario_id_usuario)
 );
 
 -- Evaluaciones
@@ -393,16 +542,18 @@ CREATE INDEX usuario_profesion_idx ON public.usuario (profesion_id_profesion);
 CREATE INDEX usuario_area_idx ON public.usuario (area_de_trabajo_id_area);
 CREATE INDEX usuario_ciudad_idx ON public.usuario (ciudad_id_ciudad);
 CREATE INDEX usuario_rol_idx ON public.usuario (rol_usuario_id_rol);
-
 CREATE INDEX perfil_profesional_usuario_idx ON public.perfil_profesional (usuario_id_usuario);
-
 CREATE INDEX pago_proveedor_idx ON public.pago (id_proveedor_pago);
 CREATE INDEX pago_codigo_transaccion_idx ON public.pago (codigo_transaccion);
-
 CREATE INDEX plan_usuario_usuario_idx ON public.plan_usuario (usuario_id_usuario);
 CREATE INDEX plan_usuario_plan_idx ON public.plan_usuario (plan_id_plan);
-CREATE INDEX plan_usuario_pago_idx ON public.plan_usuario (pago_id_pago);
-
+CREATE INDEX mensaje_contacto_destinatario_idx ON public.mensaje_contacto (usuario_id_destinatario);
+CREATE INDEX mensaje_contacto_remitente_idx ON public.mensaje_contacto (usuario_id_remitente);
+CREATE INDEX pago_usuario_idx ON public.pago (usuario_id_usuario);
+CREATE INDEX compra_modulo_empresa_idx ON public.compra_modulo (empresa_id_empresa);
+CREATE INDEX compra_modulo_modulo_idx ON public.compra_modulo (modulo_id_modulo);
+CREATE INDEX codigo_acceso_compra_idx ON public.codigo_acceso (compra_modulo_id_compra_modulo);
+CREATE INDEX codigo_acceso_usuario_idx ON public.codigo_acceso (usuario_id_usuario);
 CREATE INDEX recurso_bloque_idx ON public.recurso (bloque_contenido_id_bloque);
 CREATE INDEX evaluacion_contenido_idx ON public.evaluacion (modulo_id_modulo);
 CREATE INDEX intento_evaluacion_idx ON public.intento_evaluacion (evaluacion_id_evaluacion);
@@ -415,7 +566,19 @@ INSERT INTO public.rol_usuario (nombre_rol)
 VALUES
 ('administrador'),
 ('usuario'),
-('superadminstrador');
+('superadministrador');
+
+-- Pagos: proveedor y planes Pro. Precios de ejemplo para la demo:
+-- se cambian con UPDATE, no tocando código.
+INSERT INTO public.proveedor_pago (nombre_proveedor_pago)
+VALUES ('Transbank Webpay Plus')
+ON CONFLICT (nombre_proveedor_pago) DO NOTHING;
+
+INSERT INTO public.plan (nombre_plan, costo_plan, duracion_plan, descripcion_plan)
+VALUES
+('Pro 6 meses', 150000, 180, 'Acceso a todos los módulos por 6 meses.'),
+('Pro 12 meses', 250000, 365, 'Acceso a todos los módulos por 12 meses.')
+ON CONFLICT (nombre_plan) DO NOTHING;
 
 INSERT INTO public.profesion (nombre_profesion) VALUES
     ('Ingeniero/a Civil Informático/a'),

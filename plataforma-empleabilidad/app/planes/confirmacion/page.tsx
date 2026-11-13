@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { obtenerSesionActual } from '@/lib/auth';
-import { RUTA_CHECKOUT } from '@/lib/redirect';
-import { ETIQUETA_METODO, esMetodoPago, formatearClp, PLAN_PRO } from '@/lib/planes';
+import { buscarPagoDeUsuario, type PagoGuardado } from '@/lib/pagos';
+import { formatearClp } from '@/lib/planes';
 
 export const metadata: Metadata = {
-  title: 'Bienvenido a Pro | Empleamás',
+  title: 'Resultado del pago | Empleamás',
 };
 
 type Props = {
@@ -14,27 +14,67 @@ type Props = {
   searchParams: Promise<{ [clave: string]: string | string[] | undefined }>;
 };
 
+const ETIQUETA_TIPO_PAGO: Record<NonNullable<PagoGuardado['tipoPago']>, string> = {
+  credito: 'Tarjeta de crédito',
+  debito: 'Tarjeta de débito',
+  prepago: 'Tarjeta de prepago',
+};
+
+const formatoFecha = new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' });
+
 export default async function ConfirmacionPage({ searchParams }: Props) {
+  const { orden } = await searchParams;
+  const ordenCompra = typeof orden === 'string' ? orden : null;
+
   const sesion = await obtenerSesionActual();
   if (!sesion) {
-    redirect(`/inicio_sesion?next=${encodeURIComponent(RUTA_CHECKOUT)}`);
+    const volver = ordenCompra ? `/planes/confirmacion?orden=${encodeURIComponent(ordenCompra)}` : '/planes';
+    redirect(`/inicio_sesion?next=${encodeURIComponent(volver)}`);
   }
 
-  const { metodo, demo } = await searchParams;
-  const esDemo = demo === '1';
-  // TODO(proveedor de pagos): cuando exista el pago real, estos datos se deben
-  // leer de public.pago / public.plan_usuario usando el id de la transacción,
-  // y no desde la URL (cualquiera puede escribir la URL a mano).
-  const metodoTexto = esMetodoPago(metodo) ? ETIQUETA_METODO[metodo] : 'Tarjeta';
-  const fecha = new Intl.DateTimeFormat('es-CL', { dateStyle: 'long' }).format(new Date());
+  // El resultado SIEMPRE se lee de la BD (lo que dejó la ruta de retorno tras el
+  // commit con Transbank), nunca de la URL. Y solo si el pago es de este usuario.
+  const pago = ordenCompra ? await buscarPagoDeUsuario(ordenCompra, sesion.id_usuario) : null;
+
+  if (!pago) {
+    return (
+      <Resultado
+        icono="help"
+        etiqueta="Pago no encontrado"
+        titulo="No encontramos ese pago"
+        texto="Si acabas de pagar y ves este mensaje, revisa la sección de planes o contáctanos."
+      />
+    );
+  }
+
+  if (pago.estado === 'pendiente') {
+    return (
+      <Resultado
+        icono="hourglass_top"
+        etiqueta="Pago en proceso"
+        titulo="Tu pago todavía no se confirma"
+        texto="Recarga esta página en unos segundos. No vuelvas a pagar para no duplicar el cobro."
+      />
+    );
+  }
+
+  if (pago.estado !== 'aprobado') {
+    return (
+      <Resultado
+        icono="cancel"
+        etiqueta="Pago no realizado"
+        titulo="El pago no se completó"
+        texto="No se realizó ningún cobro y tu plan no cambió. Puedes intentarlo de nuevo."
+        accion={{ href: '/planes/pago', texto: 'Volver a intentar' }}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-14">
-      {esDemo && (
-        <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center text-sm font-semibold text-amber-800">
-          Modo demostración: no se realizó ningún cobro y el plan no se activó.
-        </p>
-      )}
+      <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-center text-sm font-semibold text-amber-800">
+        Ambiente de pruebas de Transbank: no se realizó ningún cobro real.
+      </p>
 
       <section className="mx-auto flex max-w-2xl flex-col items-center text-center">
         <span
@@ -50,61 +90,76 @@ export default async function ConfirmacionPage({ searchParams }: Props) {
           ¡Bienvenido a EmpleaMás Pro, {sesion.nombre}!
         </h1>
         <p className="mt-4 text-[#42474f]">
-          Tu suscripción está activa. Ya puedes entrar a todos los módulos de contenido grabado y
-          avanzar aprobando cada prueba.
+          Tu plan está activo. Ya puedes entrar a todos los módulos de contenido grabado y avanzar
+          aprobando cada prueba.
         </p>
       </section>
 
-      <dl className="mx-auto grid w-full max-w-3xl gap-4 rounded-2xl border border-[#c3c6d0]/60 bg-white p-6 sm:grid-cols-3">
-        <div>
-          <dt className="text-xs text-[#42474f]">Fecha</dt>
-          <dd className="mt-1 font-bold text-[#002546]">{fecha}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-[#42474f]">Método de pago</dt>
-          <dd className="mt-1 font-bold text-[#002546]">{metodoTexto}</dd>
-        </div>
-        <div>
-          <dt className="text-xs text-[#42474f]">Total</dt>
-          <dd className="mt-1 font-bold text-[#002546]">
-            {formatearClp(PLAN_PRO.precioMensualClp)} <span className="text-xs font-normal">/ mes</span>
-          </dd>
-        </div>
+      <dl className="mx-auto grid w-full max-w-3xl gap-4 rounded-2xl border border-[#c3c6d0]/60 bg-white p-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Dato titulo="Plan" valor={pago.nombrePlan ?? 'Plan Pro'} />
+        <Dato titulo="Total pagado" valor={formatearClp(pago.monto)} />
+        <Dato titulo="Método de pago" valor={pago.tipoPago ? ETIQUETA_TIPO_PAGO[pago.tipoPago] : 'Tarjeta'} />
+        <Dato
+          titulo="Vigente hasta"
+          valor={pago.fechaTerminoPlan ? formatoFecha.format(pago.fechaTerminoPlan) : '—'}
+        />
+        <Dato titulo="Orden de compra" valor={pago.ordenCompra} />
+        <Dato titulo="Código de autorización" valor={pago.codigoAutorizacion ?? '—'} />
+        <Dato titulo="Fecha" valor={pago.fechaPago ? formatoFecha.format(pago.fechaPago) : '—'} />
       </dl>
 
-      <section aria-labelledby="pasos-titulo" className="mx-auto flex w-full max-w-3xl flex-col gap-5">
-        <h2 id="pasos-titulo" className="text-xl font-extrabold text-[#002546]">
-          Primeros pasos en la plataforma
-        </h2>
-        <div className="grid gap-5 md:grid-cols-2">
-          <article className="flex flex-col gap-3 rounded-2xl border border-[#c3c6d0]/60 bg-white p-6">
-            <span aria-hidden="true" className="material-symbols-outlined text-[#002546]">play_circle</span>
-            <h3 className="font-bold text-[#002546]">Explora los módulos</h3>
-            <p className="text-sm text-[#42474f]">
-              Avanza módulo a módulo. Al aprobar cada prueba con 80% o más se desbloquea el
-              siguiente.
-            </p>
-            <Link
-              href="/modulos"
-              className="mt-auto flex items-center justify-between rounded-lg bg-[#e6f2fb] px-4 py-3 text-sm font-bold text-[#002546] hover:bg-[#d6e8f7]"
-            >
-              Ir a los módulos
-              <span aria-hidden="true" className="material-symbols-outlined text-[18px]">arrow_forward</span>
-            </Link>
-          </article>
-          <article className="flex flex-col gap-3 rounded-2xl border border-[#c3c6d0]/60 bg-white p-6">
-            <span aria-hidden="true" className="material-symbols-outlined text-[#002546]">person</span>
-            <h3 className="font-bold text-[#002546]">Configura tu perfil</h3>
-            <p className="text-sm text-[#42474f]">
-              Completa tu perfil profesional para aprovechar mejor la plataforma.
-            </p>
-            {/* TODO: no existe aún una ruta de perfil. */}
-            <span className="mt-auto rounded-lg bg-[#f1f4f6] px-4 py-3 text-sm font-bold text-[#9aa0a8]">
-              Próximamente
-            </span>
-          </article>
-        </div>
-      </section>
+      <div className="mx-auto">
+        <Link
+          href="/modulos"
+          className="flex items-center gap-2 rounded-lg bg-[#002546] px-6 py-3 text-sm font-bold text-white hover:bg-[#0d3b66]"
+        >
+          Ir a los módulos
+          <span aria-hidden="true" className="material-symbols-outlined text-[18px]">arrow_forward</span>
+        </Link>
+      </div>
     </div>
+  );
+}
+
+function Dato({ titulo, valor }: { titulo: string; valor: string }) {
+  return (
+    <div>
+      <dt className="text-xs text-[#42474f]">{titulo}</dt>
+      <dd className="mt-1 break-words font-bold text-[#002546]">{valor}</dd>
+    </div>
+  );
+}
+
+function Resultado({
+  icono,
+  etiqueta,
+  titulo,
+  texto,
+  accion = { href: '/planes', texto: 'Ir a planes' },
+}: {
+  icono: string;
+  etiqueta: string;
+  titulo: string;
+  texto: string;
+  accion?: { href: string; texto: string };
+}) {
+  return (
+    <section className="mx-auto flex max-w-2xl flex-col items-center text-center">
+      <span
+        aria-hidden="true"
+        className="material-symbols-outlined flex h-16 w-16 items-center justify-center rounded-full bg-[#e6f2fb] text-3xl text-[#002546]"
+      >
+        {icono}
+      </span>
+      <p className="mt-5 text-[11px] font-bold uppercase tracking-wide text-[#006689]">{etiqueta}</p>
+      <h1 className="mt-2 text-3xl font-extrabold text-[#002546]">{titulo}</h1>
+      <p className="mt-4 text-[#42474f]">{texto}</p>
+      <Link
+        href={accion.href}
+        className="mt-8 rounded-lg bg-[#002546] px-6 py-3 text-sm font-bold text-white hover:bg-[#0d3b66]"
+      >
+        {accion.texto}
+      </Link>
+    </section>
   );
 }

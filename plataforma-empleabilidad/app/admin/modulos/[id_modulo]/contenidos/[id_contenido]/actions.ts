@@ -206,7 +206,6 @@ export async function eliminarBloqueAction(idBloque: number, idModulo: number, i
 
     const urlRecurso = resUrl.rows[0]?.url_recurso;
 
-    // Eliminar archivo usando eliminarArchivoStorage de storage-helper
     if (urlRecurso) {
       await eliminarArchivoStorage(urlRecurso);
     }
@@ -219,5 +218,81 @@ export async function eliminarBloqueAction(idBloque: number, idModulo: number, i
   } catch (error: any) {
     console.error('Error en eliminarBloqueAction:', error);
     return { success: false, message: error.message || 'Error al eliminar el bloque.' };
+  }
+}
+
+export async function obtenerFormularioLeccionAction(idContenido: number) {
+  try {
+    const res = await query(
+      `SELECT f.*, u.nombre, u.apellido_paterno, u.correo, r.nombre_rol
+       FROM public.formulario_leccion f
+       JOIN public.usuario u ON u.id_usuario = f.usuario_id_admin
+       JOIN public.rol_usuario r ON r.id_rol = u.rol_usuario_id_rol
+       WHERE f.contenido_id_contenido = $1;`,
+      [idContenido]
+    );
+    return { success: true, formulario: res.rows[0] || null };
+  } catch (error: any) {
+    console.error('Error al obtener formulario de lección:', error);
+    return { success: false, formulario: null, message: error.message };
+  }
+}
+
+export async function guardarFormularioLeccionAction(formData: FormData) {
+  try {
+    const idContenido = Number(formData.get('contenido_id_contenido'));
+    const idModulo = Number(formData.get('id_modulo'));
+    const idAdmin = Number(formData.get('usuario_id_admin'));
+    const titulo = (formData.get('titulo_formulario') as string) || 'Envíanos tu consulta';
+    const descripcion = (formData.get('descripcion_formulario') as string) || null;
+
+    if (!idContenido || !idAdmin) {
+      return { success: false, message: 'Selecciona un administrador destinatario válido.' };
+    }
+
+    await query(
+      `INSERT INTO public.formulario_leccion (contenido_id_contenido, usuario_id_admin, titulo_formulario, descripcion_formulario)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (contenido_id_contenido) 
+       DO UPDATE SET 
+         usuario_id_admin = EXCLUDED.usuario_id_admin,
+         titulo_formulario = EXCLUDED.titulo_formulario,
+         descripcion_formulario = EXCLUDED.descripcion_formulario;`,
+      [idContenido, idAdmin, titulo, descripcion]
+    );
+
+    revalidatePath(`/admin/modulos/${idModulo}/contenidos/${idContenido}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error al guardar formulario de lección:', error);
+    return { success: false, message: error.message || 'Error al guardar la configuración.' };
+  }
+}
+
+export async function eliminarFormularioLeccionAction(idFormulario: number, idContenido: number, idModulo: number) {
+  try {
+    await query(`DELETE FROM public.formulario_leccion WHERE id_formulario = $1;`, [idFormulario]);
+    revalidatePath(`/admin/modulos/${idModulo}/contenidos/${idContenido}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error al eliminar formulario de lección:', error);
+    return { success: false, message: error.message || 'Error al eliminar el formulario.' };
+  }
+}
+
+export async function obtenerAdministradoresAction() {
+  try {
+    const res = await query(
+      `SELECT u.id_usuario, u.nombre, u.apellido_paterno, u.correo, r.nombre_rol
+       FROM public.usuario u
+       JOIN public.rol_usuario r ON r.id_rol = u.rol_usuario_id_rol
+       WHERE LOWER(r.nombre_rol) IN ('administrador', 'superadministrador', 'superadminstrador', 'superadmin')
+         AND LOWER(u.estado_usuario::text) = 'activo'
+       ORDER BY u.nombre ASC;`
+    );
+    return { success: true, administradores: res.rows };
+  } catch (error: any) {
+    console.error('Error al obtener administradores:', error);
+    return { success: false, administradores: [] };
   }
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import styles from "./LandingPage.module.css";
+import NavbarPublica from "./NavbarPublica"; // Importación del Navbar dinámico
 
 const plans = [
   {
@@ -55,25 +56,8 @@ const companies = ["TechCorp", "GlobalBank", "InnovateInc", "StartUp Hub"];
 export default function LandingPage() {
   return (
     <div className={styles.page} id="inicio">
-      <header className={styles.header}>
-        <nav className={styles.nav} aria-label="Navegación principal">
-          <Link
-            className={styles.brand}
-            href="#inicio"
-            aria-label="Empleamás, inicio"
-          >
-            emplea<span>más</span>
-          </Link>
-          <div className={styles.navLinks}>
-            <a href="#como-funciona">Cómo funciona</a>
-            <Link href="/planes">Planes</Link>
-            <a href="#historias">Historias</a>
-          </div>
-          <Link className={styles.loginLink} href="/inicio_sesion">
-            Iniciar sesión <span aria-hidden="true">↗</span>
-          </Link>
-        </nav>
-      </header>
+      {/* REEMPLAZO DEL HEADER ESTÁTICO POR NAVBARPUBLICA */}
+      <NavbarPublica />
 
       <main>
         <section className={styles.hero} aria-labelledby="hero-title">

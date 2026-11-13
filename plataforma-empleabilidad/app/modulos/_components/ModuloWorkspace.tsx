@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import TarjetaProgreso from '../_components/TarjetaProgreso';
 
 interface Contenido {
@@ -34,6 +35,7 @@ interface Modulo {
   evaluaciones?: Evaluacion[];
   estado?: string;
   bloqueado?: boolean;
+  es_gratuito?: boolean;
   totalContenidos?: number;
   contenidosCompletados?: number;
 }
@@ -46,26 +48,27 @@ interface ResumenProgreso {
 
 type ItemModuloUnificado =
   | {
-      tipo: 'leccion';
-      id: number;
-      orden: number;
-      titulo: string;
-      duracion?: number;
-      estado?: string;
-      bloqueado?: boolean;
-    }
+    tipo: 'leccion';
+    id: number;
+    orden: number;
+    titulo: string;
+    duracion?: number;
+    estado?: string;
+    bloqueado?: boolean;
+  }
   | {
-      tipo: 'evaluacion';
-      id: number;
-      orden: number;
-      titulo: string;
-      duracion_minutos: number;
-      porcentaje_minimo_aprobacion: number;
-      estado?: string;
-      bloqueado?: boolean;
-    };
+    tipo: 'evaluacion';
+    id: number;
+    orden: number;
+    titulo: string;
+    duracion_minutos: number;
+    porcentaje_minimo_aprobacion: number;
+    estado?: string;
+    bloqueado?: boolean;
+  };
 
 export default function ModuloWorkspace() {
+  const router = useRouter();
   const [nombreUsuario, setNombreUsuario] = useState<string>('Usuario');
   const [modulos, setModulos] = useState<Modulo[]>([]);
   const [resumen, setResumen] = useState<ResumenProgreso>({
@@ -115,8 +118,11 @@ export default function ModuloWorkspace() {
     cargarModulosBD();
   }, []);
 
-  const toggleModulo = (id_modulo: number, estaBloqueado?: boolean) => {
-    if (estaBloqueado) return;
+  const handleModuloClick = (id_modulo: number, estaBloqueado?: boolean) => {
+    if (estaBloqueado) {
+      router.push('/planes');
+      return;
+    }
     setModulosAbiertos((prev) => ({
       ...prev,
       [id_modulo]: !prev[id_modulo],
@@ -177,6 +183,7 @@ export default function ModuloWorkspace() {
                 const estaDesplegado = Boolean(modulosAbiertos[modulo.id_modulo]);
                 const esCompletado = modulo.estado === 'completado';
                 const estaBloqueado = Boolean(modulo.bloqueado);
+                const esPremium = estaBloqueado || modulo.es_gratuito === false;
 
                 const leccionesMapeadas: ItemModuloUnificado[] = (modulo.contenidos || []).map((c) => ({
                   tipo: 'leccion',
@@ -208,91 +215,79 @@ export default function ModuloWorkspace() {
                 return (
                   <article
                     key={modulo.id_modulo}
-                    className={`bg-white rounded-xl shadow-[0px_4px_20px_rgba(13,59,102,0.05)] border transition-all duration-200 overflow-hidden ${
-                      estaBloqueado
-                        ? 'opacity-65 bg-slate-50 border-slate-200'
-                        : esCompletado
+                    className={`bg-white rounded-xl shadow-[0px_4px_20px_rgba(13,59,102,0.05)] border transition-all duration-200 overflow-hidden ${estaBloqueado
+                      ? 'bg-slate-50 border-slate-200'
+                      : esCompletado
                         ? 'border-l-4 border-l-[#006689] border-t border-r border-b border-[#E6F2FB]'
                         : 'border-l-4 border-l-[#002547] border-t border-r border-b border-[#E6F2FB]'
-                    }`}
+                      }`}
                   >
                     {/* Cabecera Módulo */}
                     <div
-                      onClick={() => toggleModulo(modulo.id_modulo, estaBloqueado)}
-                      className={`p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 select-none ${
-                        estaBloqueado
-                          ? 'cursor-not-allowed'
-                          : 'cursor-pointer hover:bg-slate-50/50 transition-colors'
-                      }`}
+                      onClick={() => handleModuloClick(modulo.id_modulo, estaBloqueado)}
+                      className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 select-none cursor-pointer hover:bg-slate-100/60 transition-colors"
                     >
                       <div className="flex items-start sm:items-center gap-4 flex-grow">
                         <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
-                            estaBloqueado
-                              ? 'bg-slate-200 text-slate-500'
-                              : 'bg-[#E6F2FB]'
-                          }`}
+                          className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${estaBloqueado ? 'bg-slate-200 text-slate-500' : 'bg-[#E6F2FB]'
+                            }`}
                         >
                           <span
-                            className={`material-symbols-outlined font-bold ${
-                              estaBloqueado
-                                ? 'text-slate-400'
-                                : esCompletado
+                            className={`material-symbols-outlined font-bold ${estaBloqueado
+                              ? 'text-slate-400'
+                              : esCompletado
                                 ? 'text-[#006689]'
                                 : 'text-[#38BDF5]'
-                            }`}
+                              }`}
                           >
-                            {estaBloqueado
-                              ? 'lock'
-                              : esCompletado
-                              ? 'check_circle'
-                              : 'play_circle'}
+                            {estaBloqueado ? 'lock' : esCompletado ? 'check_circle' : 'play_circle'}
                           </span>
                         </div>
 
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span
-                              className={`inline-block px-3 py-0.5 rounded-full text-xs font-semibold ${
-                                estaBloqueado
-                                  ? 'bg-slate-200 text-slate-600'
-                                  : esCompletado
+                              className={`inline-block px-3 py-0.5 rounded-full text-xs font-semibold ${estaBloqueado
+                                ? 'bg-slate-200 text-slate-600'
+                                : esCompletado
                                   ? 'bg-[#E6F2FB] text-[#006689]'
                                   : 'bg-[#38BDF5]/10 text-[#004f6b] border border-[#38BDF5]/20'
-                              }`}
+                                }`}
                             >
-                              {estaBloqueado
-                                ? 'Bloqueado'
-                                : esCompletado
-                                ? 'Completado'
-                                : 'En curso'}
+                              {estaBloqueado ? 'Bloqueado' : esCompletado ? 'Completado' : 'En curso'}
                             </span>
                             <span className="text-xs text-[#737780]">
                               {modulo.contenidosCompletados || 0} de {totalItems} completados
                             </span>
                           </div>
                           <h3
-                            className={`text-base font-bold ${
-                              estaBloqueado ? 'text-slate-500' : 'text-[#002547]'
-                            }`}
+                            className={`text-base font-bold ${estaBloqueado ? 'text-slate-600' : 'text-[#002547]'
+                              }`}
                           >
                             {numeroModulo}. {modulo.titulo}
                           </h3>
                           <p className="text-sm text-[#42474f] mt-0.5">{modulo.descripcion}</p>
                         </div>
                       </div>
-
-                      {!estaBloqueado && (
-                        <button
-                          type="button"
-                          aria-label="Desplegar contenido"
-                          className="p-2 text-[#002547] hover:bg-[#E6F2FB] rounded-full transition-colors self-end sm:self-center"
-                        >
-                          <span className="material-symbols-outlined text-2xl">
-                            {estaDesplegado ? 'expand_less' : 'expand_more'}
+                      <div className="flex items-center gap-3 self-end sm:self-center">
+                        {esPremium && (
+                          <span className="px-2.5 py-1 text-[11px] font-extrabold tracking-wider uppercase rounded-md bg-amber-50 text-amber-700 border border-amber-300/80 shadow-xs shrink-0">
+                            PREMIUM
                           </span>
-                        </button>
-                      )}
+                        )}
+
+                        {!estaBloqueado && (
+                          <button
+                            type="button"
+                            aria-label="Desplegar contenido"
+                            className="p-2 text-[#002547] hover:bg-[#E6F2FB] rounded-full transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-2xl">
+                              {estaDesplegado ? 'expand_less' : 'expand_more'}
+                            </span>
+                          </button>
+                        )}
+                      </div>
                     </div>
 
                     {estaDesplegado && !estaBloqueado && (
@@ -314,21 +309,19 @@ export default function ModuloWorkspace() {
                               return (
                                 <div
                                   key={`l_${item.id}`}
-                                  className={`bg-white p-4 rounded-lg border flex items-center justify-between gap-4 transition-colors ${
-                                    contenidoBloqueado
-                                      ? 'border-slate-200 bg-slate-50/70'
-                                      : 'border-[#E2E8F0] hover:border-[#38BDF5]'
-                                  }`}
+                                  className={`bg-white p-4 rounded-lg border flex items-center justify-between gap-4 transition-colors ${contenidoBloqueado
+                                    ? 'border-slate-200 bg-slate-50/70'
+                                    : 'border-[#E2E8F0] hover:border-[#38BDF5]'
+                                    }`}
                                 >
                                   <div className="flex items-center gap-3">
                                     <span
-                                      className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${
-                                        contenidoBloqueado
-                                          ? 'bg-slate-200 text-slate-400'
-                                          : leccionCompletada
+                                      className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${contenidoBloqueado
+                                        ? 'bg-slate-200 text-slate-400'
+                                        : leccionCompletada
                                           ? 'bg-[#E6F2FB] text-[#006689]'
                                           : 'bg-[#E6F2FB] text-[#002547]'
-                                      }`}
+                                        }`}
                                     >
                                       {contenidoBloqueado ? (
                                         <span className="material-symbols-outlined text-sm">
@@ -344,11 +337,8 @@ export default function ModuloWorkspace() {
                                     </span>
                                     <div>
                                       <h5
-                                        className={`text-sm font-semibold ${
-                                          contenidoBloqueado
-                                            ? 'text-slate-400'
-                                            : 'text-[#002547]'
-                                        }`}
+                                        className={`text-sm font-semibold ${contenidoBloqueado ? 'text-slate-400' : 'text-[#002547]'
+                                          }`}
                                       >
                                         {item.titulo}
                                       </h5>
@@ -362,10 +352,10 @@ export default function ModuloWorkspace() {
 
                                   {contenidoBloqueado ? (
                                     <button
-                                      disabled
-                                      className="px-3 py-1.5 bg-slate-200 text-slate-400 font-semibold text-xs rounded-md cursor-not-allowed whitespace-nowrap"
+                                      onClick={() => router.push('/planes')}
+                                      className="px-3 py-1.5 bg-amber-50 border border-amber-300/80 text-amber-700 font-bold text-xs rounded-md hover:bg-amber-100 transition-colors whitespace-nowrap"
                                     >
-                                      Bloqueado
+                                      Obtener Plan
                                     </button>
                                   ) : (
                                     <Link
@@ -384,11 +374,10 @@ export default function ModuloWorkspace() {
                             return (
                               <div
                                 key={`t_${item.id}`}
-                                className={`bg-white p-4 rounded-lg border flex items-center justify-between gap-4 transition-colors ${
-                                  evaluacionBloqueada
-                                    ? 'border-slate-200 bg-slate-50/70'
-                                    : 'border-indigo-200 hover:border-indigo-400'
-                                }`}
+                                className={`bg-white p-4 rounded-lg border flex items-center justify-between gap-4 transition-colors ${evaluacionBloqueada
+                                  ? 'border-slate-200 bg-slate-50/70'
+                                  : 'border-indigo-200 hover:border-indigo-400'
+                                  }`}
                               >
                                 <div className="flex items-center gap-3">
                                   <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-extrabold text-xs shrink-0 border border-indigo-100">
@@ -402,11 +391,8 @@ export default function ModuloWorkspace() {
                                         {item.orden}
                                       </span>
                                       <h5
-                                        className={`text-sm font-bold ${
-                                          evaluacionBloqueada
-                                            ? 'text-slate-400'
-                                            : 'text-[#002547]'
-                                        }`}
+                                        className={`text-sm font-bold ${evaluacionBloqueada ? 'text-slate-400' : 'text-[#002547]'
+                                          }`}
                                       >
                                         {item.titulo}
                                       </h5>
@@ -426,10 +412,10 @@ export default function ModuloWorkspace() {
 
                                 {evaluacionBloqueada ? (
                                   <button
-                                    disabled
-                                    className="px-3 py-1.5 bg-slate-200 text-slate-400 font-semibold text-xs rounded-md cursor-not-allowed whitespace-nowrap"
+                                    onClick={() => router.push('/planes')}
+                                    className="px-3 py-1.5 bg-amber-50 border border-amber-300/80 text-amber-700 font-bold text-xs rounded-md hover:bg-amber-100 transition-colors whitespace-nowrap"
                                   >
-                                    Bloqueado
+                                    Obtener Plan
                                   </button>
                                 ) : (
                                   <Link
@@ -452,31 +438,58 @@ export default function ModuloWorkspace() {
           </div>
         </div>
 
-        {/* Sidebar Lateral */}
-        <aside className="lg:col-span-4 flex flex-col gap-6">
-          <Link href="/perfil" className="block">
-            <div className="bg-gradient-to-br from-[#002547] to-[#0d3b66] rounded-xl p-6 shadow-[0px_4px_20px_rgba(13,59,102,0.05)] text-white relative overflow-hidden group cursor-pointer h-full">
-              <div className="relative z-10 flex flex-col h-full justify-between">
-                <div>
-                  <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mb-4 backdrop-blur-sm">
-                    <span className="material-symbols-outlined text-white">
-                      assignment_ind
-                    </span>
+        <aside className="lg:col-span-4 flex flex-col gap-6 self-start">
+          {(() => {
+            const perfilHabilitado =
+              resumen.totalLecciones > 0 &&
+              resumen.leccionesCompletadas >= resumen.totalLecciones;
+
+            return (
+              <div
+                onClick={() => {
+                  if (perfilHabilitado) {
+                    router.push('/perfil');
+                  }
+                }}
+                className={`bg-gradient-to-br from-[#002547] to-[#0d3b66] rounded-xl p-6 shadow-[0px_4px_20px_rgba(13,59,102,0.05)] text-white relative overflow-hidden transition-all ${perfilHabilitado
+                    ? 'cursor-pointer group hover:shadow-lg'
+                    : 'cursor-not-allowed opacity-90'
+                  }`}
+              >
+                <div className="relative z-10 flex flex-col justify-between">
+                  <div>
+                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mb-4 backdrop-blur-sm">
+                      <span className="material-symbols-outlined text-white">
+                        {perfilHabilitado ? 'assignment_ind' : 'lock'}
+                      </span>
+                    </div>
+
+                    <h3 className="text-lg font-bold mb-2">Perfil Profesional Digital</h3>
+
+                    <p className="text-xs text-white/80 mb-6 leading-relaxed">
+                      Crea tu perfil profesional digital y compártelo con empleadores potenciales para destacar tus habilidades y logros.
+                    </p>
                   </div>
-                  <h3 className="text-lg font-bold mb-2">Perfil Profesional Digital</h3>
-                  <p className="text-xs text-white/80 mb-6">
-                    Muestra tu mejor versión. Actualiza tus datos y portafolio para las asesorías.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 text-xs font-bold text-[#38BDF5] group-hover:text-white transition-colors">
-                  Ver y editar perfil
-                  <span className="material-symbols-outlined text-sm transform group-hover:translate-x-1 transition-transform">
-                    arrow_forward
-                  </span>
+
+                  <div className="flex items-center gap-2 text-xs font-bold pt-3 border-t border-white/10">
+                    {perfilHabilitado ? (
+                      <span className="text-[#38BDF5] group-hover:text-white flex items-center gap-2 transition-colors">
+                        Ver y editar perfil
+                        <span className="material-symbols-outlined text-sm transform group-hover:translate-x-1 transition-transform">
+                          arrow_forward
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-amber-300 flex items-center gap-1.5 text-[11px] font-medium">
+                        <span className="material-symbols-outlined text-sm text-amber-400">info</span>
+                        Finaliza todas las lecciones para acceder
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </Link>
+            );
+          })()}
         </aside>
       </div>
     </div>
