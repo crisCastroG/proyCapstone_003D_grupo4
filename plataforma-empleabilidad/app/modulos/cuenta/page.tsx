@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { query } from '@/lib/db';
 import { obtenerSesionActual } from '@/lib/auth';
 import BotonCerrarSesion from '@/components/BotonCerrarSesion';
-import { PLAN_GRATUITO } from '@/lib/planes';
+import { obtenerPlanGratuito } from '@/lib/planes-bd';
 import DarseDeBaja from './DarseDeBaja';
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
@@ -45,7 +45,6 @@ export default async function CuentaPage() {
 
   const usuario = result.rows[0];
 
-  // Sesión válida pero cuenta inexistente o desactivada
   if (!usuario) {
     return (
       <div className="bg-white p-6 rounded-xl border border-[#c3c6d0]/30 max-w-xl">
@@ -58,8 +57,7 @@ export default async function CuentaPage() {
     );
   }
 
-  // Último plan comprado que ya empezó (el que termina más tarde).
-  // Si nunca compró uno, el usuario está en el plan gratuito.
+
   const planRes = await query(
     `SELECT
        pl.nombre_plan,
@@ -77,6 +75,11 @@ export default async function CuentaPage() {
     [sesion.id_usuario]
   );
   const ultimoPlan = planRes.rows[0] ?? null;
+
+  const planGratuito = await obtenerPlanGratuito();
+  const nombrePlanGratuito = planGratuito?.nombre ?? 'Plan gratuito';
+  const descripcionPlanGratuito =
+    planGratuito?.descripcion ?? 'Viene con tu cuenta. Conoce la plataforma con el módulo introductorio.';
   const planVigente = ultimoPlan?.vigente ? ultimoPlan : null;
   const planVigenteHasta: string | null = planVigente?.termino ?? null; // para el aviso de la baja
 
@@ -131,11 +134,11 @@ export default async function CuentaPage() {
           </>
         ) : (
           <>
-            <p className="text-xl font-extrabold text-[#002547] mb-1">{PLAN_GRATUITO.nombre}</p>
+            <p className="text-xl font-extrabold text-[#002547] mb-1">{nombrePlanGratuito}</p>
             <p className="text-sm text-[#42474f] mb-4">
               {ultimoPlan
                 ? `Tu último plan (${ultimoPlan.nombre_plan}) venció el ${ultimoPlan.termino}.`
-                : PLAN_GRATUITO.descripcion}
+                : descripcionPlanGratuito}
             </p>
             <Link
               href="/planes"
