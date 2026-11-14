@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
 
     const token = crypto.randomBytes(32).toString('hex');
-    const expiraEn = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos exactos (HU-03)
+    const expiraEn = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos exactos de expiración
 
     const updateRes = await query(
       `UPDATE public.usuario
