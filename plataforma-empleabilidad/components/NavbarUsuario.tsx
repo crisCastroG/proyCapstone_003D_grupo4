@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { SessionPayload } from "@/lib/auth";
 import BotonCerrarSesion from "@/components/BotonCerrarSesion";
+import AvatarIniciales from "@/components/AvatarIniciales";
 
 type Seccion = "modulos" | "perfil" | "planes";
 
 const ENLACES: { seccion: Seccion; href: string; texto: string }[] = [
-  { seccion: "modulos", href: "/modulos", texto: "Módulos" }, 
+  { seccion: "modulos", href: "/modulos", texto: "Módulos" },
 ];
 export default function NavbarUsuario({
   sesion,
@@ -67,9 +68,9 @@ export default function NavbarUsuario({
           <Link
             href="/modulos/cuenta"
             aria-label="Mi cuenta"
-            className="w-10 h-10 rounded-full bg-[#002546] text-white flex items-center justify-center font-bold text-sm hover:opacity-80 transition-opacity"
->
-            {sesion.nombre.charAt(0).toUpperCase()}
+            className="w-10 h-10 rounded-full overflow-hidden border border-[#c3c6d0] cursor-pointer ml-1 hover:opacity-80 transition-opacity"
+          >
+            <AvatarIniciales />
           </Link>
           <BotonCerrarSesion className="ml-2 text-sm font-semibold text-[#42474f] hover:text-[#002546] hover:bg-[#f1f4f6] border border-[#c3c6d0] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60" />
         </div>

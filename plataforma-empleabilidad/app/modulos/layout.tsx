@@ -1,8 +1,26 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import BotonCerrarSesion from '@/components/BotonCerrarSesion';
+import AvatarIniciales from '@/components/AvatarIniciales';
 
-export default function ModulosLayout({ children }: { children: ReactNode }) {
+function obtenerIniciales(usuario?: {
+  nombre?: string | null;
+  apellido_paterno?: string | null;
+  apellidoPaterno?: string | null;
+} | null) {
+  if (!usuario) return 'U';
+
+  const primerNombre = usuario.nombre?.trim().split(' ')[0] || '';
+  const primerApellido = (usuario.apellido_paterno || usuario.apellidoPaterno || '')
+    .trim()
+    .split(' ')[0];
+
+  return `${primerNombre[0] || ''}${primerApellido[0] || ''}`.toUpperCase() || 'U';
+}
+
+export default async function ModulosLayout({ children }: { children: ReactNode }) {
+
+
   return (
     <div className="min-h-screen flex flex-col bg-[#f7fafc]">
       <header className="bg-white border-b border-[#c3c6d0]/40 shadow-sm sticky top-0 z-50 w-full">
@@ -30,10 +48,8 @@ export default function ModulosLayout({ children }: { children: ReactNode }) {
               href="/modulos/cuenta"
               aria-label="Mi cuenta"
               className="w-10 h-10 rounded-full overflow-hidden border border-[#c3c6d0] cursor-pointer ml-1 hover:opacity-80 transition-opacity"
->
-             <div className="w-full h-full bg-[#002546] text-white flex items-center justify-center font-bold text-sm">
-               A
-             </div>
+            >
+              <AvatarIniciales />
             </Link>
             <BotonCerrarSesion className="ml-2 text-sm font-semibold text-[#42474f] hover:text-[#002546] hover:bg-[#f1f4f6] border border-[#c3c6d0] px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60" />
           </div>

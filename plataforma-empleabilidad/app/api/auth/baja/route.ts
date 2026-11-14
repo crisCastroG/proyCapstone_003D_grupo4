@@ -3,7 +3,6 @@ import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
 import { obtenerSesionActual } from '@/lib/auth';
 
-// Baja lógica: la cuenta queda "desactivada" (no se borra nada) y el usuario ya no puede iniciar sesión.
 export async function POST(request: Request) {
   try {
     const sesion = await obtenerSesionActual();
