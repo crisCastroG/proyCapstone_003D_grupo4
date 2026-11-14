@@ -251,7 +251,7 @@ CREATE TABLE public.mensaje_contacto (
     asunto VARCHAR(200),
     mensaje TEXT NOT NULL,
     fecha_envio TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    estado_mensaje VARCHAR(20) NOT NULL DEFAULT 'no_leido' 
+    estado_mensaje VARCHAR(20) NOT NULL DEFAULT 'no leido' 
         CHECK (estado_mensaje IN ('no leido', 'leido', 'respondido')),
     contenido_id_contenido INTEGER NOT NULL 
         REFERENCES public.contenido (id_contenido) ON DELETE CASCADE,

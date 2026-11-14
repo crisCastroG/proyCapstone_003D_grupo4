@@ -1,10 +1,14 @@
 import type { ReactNode } from 'react';
 import AdminNavbar from './AdminNavbar';
+import { query } from '@/lib/db';
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const nuevos = await query(`SELECT COUNT(*) AS n FROM public.mensaje_contacto WHERE estado_mensaje = 'no leido'`);
+  const mensajesNuevos = Number(nuevos.rows[0]?.n ?? 0);
+
   return (
     <div className="min-h-screen flex flex-col bg-[#f7fafc]">
-      <AdminNavbar />
+      <AdminNavbar mensajesNuevos={mensajesNuevos} />
       <main className="flex-grow w-full max-w-[1200px] mx-auto px-6 py-8">
         {children}
       </main>

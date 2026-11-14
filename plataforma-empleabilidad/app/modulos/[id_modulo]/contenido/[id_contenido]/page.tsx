@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import SidebarNavegacion, { ModuloSidebar } from '../../../_components/SidebarNavegacion';
-import FormularioContactoEstudiante from './_components/FormularioContactoEstudiante';
+import ConsultaContenido from '../../../_components/ConsultaContenido';
 
 interface ItemNav {
   id: number;
@@ -44,13 +44,6 @@ interface DetalleContenido {
   modulo_posicion: number;
 }
 
-interface FormularioLeccion {
-  id_formulario: number;
-  titulo_formulario?: string;
-  descripcion_formulario?: string;
-  usuario_id_admin: number;
-}
-
 export default function ContenidoViewPage() {
   const params = useParams();
   const router = useRouter();
@@ -60,7 +53,6 @@ export default function ContenidoViewPage() {
   const [modulos, setModulos] = useState<ModuloSidebar[]>([]);
   const [bloques, setBloques] = useState<Bloque[]>([]);
   const [recursos, setRecursos] = useState<Recurso[]>([]);
-  const [formulario, setFormulario] = useState<FormularioLeccion | null>(null);
   const [navAnterior, setNavAnterior] = useState<ItemNav | null>(null);
   const [navSiguiente, setNavSiguiente] = useState<ItemNav | null>(null);
 
@@ -92,7 +84,6 @@ export default function ContenidoViewPage() {
         setModulos(data.modulos || []);
         setBloques(data.bloques || []);
         setRecursos(data.recursos || []);
-        setFormulario(data.formulario || null);
         setNavAnterior(data.navegacion?.anterior || null);
         setNavSiguiente(data.navegacion?.siguiente || null);
 
@@ -132,12 +123,7 @@ export default function ContenidoViewPage() {
         return;
       }
 
-      if (navSiguiente) { 
-        if (navSiguiente.bloqueado) {
-          router.push('/planes');
-          return;
-        }
-
+      if (navSiguiente) {
         const urlNext =
           navSiguiente.tipo === 'evaluacion'
             ? `/modulos/evaluaciones/${navSiguiente.id}`
@@ -179,6 +165,7 @@ export default function ContenidoViewPage() {
 
   return (
     <div className="flex flex-col md:flex-row gap-8 -mt-2">
+      {/* BARRA LATERAL IZQUIERDA UNIFICADA CON PROGRESO COMPLETO */}
       <SidebarNavegacion
         modulos={modulos}
         progresoGlobal={progresoGlobal}
@@ -326,15 +313,9 @@ export default function ContenidoViewPage() {
           )}
         </div>
 
-        {formulario && (
-          <FormularioContactoEstudiante
-            idContenido={detalle.id_contenido}
-            idAdminDestinatario={formulario.usuario_id_admin}
-            tituloFormulario={formulario.titulo_formulario}
-            descripcionFormulario={formulario.descripcion_formulario}
-          />
-        )}
+        <ConsultaContenido idContenido={Number(idContenido)} />
 
+        {/* NAVEGACIÓN INFERIOR */}
         <footer className="mt-8 pt-6 border-t border-[#E2E8F0] flex items-center justify-between gap-4">
           {navAnterior && !navAnterior.bloqueado ? (
             <Link
