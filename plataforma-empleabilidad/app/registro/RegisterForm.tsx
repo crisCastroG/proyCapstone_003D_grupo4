@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { hoyEnChile, validarFechaNacimiento } from "@/lib/validators";
 
 interface Profesion {
   id_profesion: number;
@@ -154,6 +155,14 @@ export default function RegisterForm({ next }: { next?: string }) {
     if (!esRunChilenoValido(formData.run)) {
       setError("Por favor ingresa un RUN chileno válido.");
       return;
+    }
+
+    if (formData.fecha_nacimiento) {
+      const fecha = validarFechaNacimiento(formData.fecha_nacimiento);
+      if (!fecha.valida) {
+        setError(fecha.error ?? "La fecha de nacimiento no es válida.");
+        return;
+      }
     }
 
     if (!profesionId || !areaId || !regionId || !ciudadId) {
@@ -439,6 +448,8 @@ export default function RegisterForm({ next }: { next?: string }) {
               <input
                 type="date"
                 name="fecha_nacimiento"
+                min="1900-01-01"
+                max={hoyEnChile()}
                 value={formData.fecha_nacimiento}
                 onChange={handleChange}
                 style={{
