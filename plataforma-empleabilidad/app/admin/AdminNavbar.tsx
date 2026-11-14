@@ -54,6 +54,15 @@ export default function AdminNavbar({ mensajesNuevos = 0 }: { mensajesNuevos?: n
             )}
           </Link>
           <Link
+            href="/admin/planes"
+            className={`pb-1 transition-all ${pathname.startsWith('/admin/planes')
+                ? 'text-[#002546] border-b-2 border-[#002546] font-bold'
+                : 'text-[#42474f] hover:text-[#002546]'
+              }`}
+          >
+            Planes
+          </Link>
+          <Link
             href="/modulos"
             className="text-[#42474f] hover:text-[#002546] pb-1 transition-all"
           >

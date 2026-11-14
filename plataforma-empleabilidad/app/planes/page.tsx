@@ -2,12 +2,8 @@ import type { Metadata } from 'next';
 import { obtenerSesionActual } from '@/lib/auth';
 import { tienePlanActivo } from '@/lib/suscripcion';
 import { RUTA_CHECKOUT } from '@/lib/redirect';
-import {
-  COMPARATIVA,
-  PLAN_GRATUITO,
-  PLAN_PRO,
-  PREGUNTAS_FRECUENTES,
-} from '@/lib/planes';
+import { COMPARATIVA, PREGUNTAS_FRECUENTES } from '@/lib/planes';
+import { obtenerPlanesActivos, type PlanBD } from '@/lib/planes-bd';
 import TarjetaPlan from './_components/TarjetaPlan';
 
 export const metadata: Metadata = {
@@ -18,6 +14,7 @@ export const metadata: Metadata = {
 export default async function PlanesPage() {
   const sesion = await obtenerSesionActual();
   const esPro = sesion ? await tienePlanActivo(sesion.id_usuario) : false;
+  const planes = await obtenerPlanesActivos();
 
   // El botón "Comprar" depende de quién está mirando:
   // - sin sesión: va al login y, después, vuelve al checkout gracias a ?next=
@@ -31,6 +28,9 @@ export default async function PlanesPage() {
   const accionGratis = sesion
     ? ({ tipo: 'deshabilitado', texto: esPro ? 'Incluido en tu plan' : 'Tu plan actual' } as const)
     : ({ tipo: 'enlace', href: '/registro', texto: 'Crear cuenta gratis' } as const);
+
+  // Los planes de costo 0 usan la acción "gratis"; los de pago, la de compra.
+  const accionPara = (plan: PlanBD) => (plan.costo === 0 ? accionGratis : accionPro);
 
   return (
     <div className="flex flex-col gap-20">
@@ -49,15 +49,27 @@ export default async function PlanesPage() {
       </section>
 
       {/* Tarjetas */}
-      <section aria-label="Planes disponibles" className="mx-auto grid w-full max-w-3xl gap-8 md:grid-cols-2">
-        <TarjetaPlan plan={PLAN_GRATUITO} accion={accionGratis} />
-        <TarjetaPlan
-          plan={PLAN_PRO}
-          destacado
-          accion={accionPro}
-          nota={!sesion ? 'Te pediremos iniciar sesión o crear una cuenta.' : undefined}
-        />
-      </section>
+      {planes.length === 0 ? (
+        <p className="text-center text-sm text-[#42474f]">No hay planes disponibles por ahora.</p>
+      ) : (
+        <section
+          aria-label="Planes disponibles"
+          className={`mx-auto grid w-full gap-8 ${
+            planes.length >= 3 ? 'max-w-5xl md:grid-cols-3' : 'max-w-3xl md:grid-cols-2'
+          }`}
+        >
+          {planes.map((plan) => (
+            <TarjetaPlan
+              key={plan.id}
+              plan={plan}
+              accion={accionPara(plan)}
+              nota={
+                plan.costo > 0 && !sesion ? 'Te pediremos iniciar sesión o crear una cuenta.' : undefined
+              }
+            />
+          ))}
+        </section>
+      )}
 
       {/* Comparativa */}
       <section aria-labelledby="comparativa-titulo" className="flex flex-col items-center gap-6">

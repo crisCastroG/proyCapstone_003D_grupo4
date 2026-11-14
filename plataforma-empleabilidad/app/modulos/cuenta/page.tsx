@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { query } from '@/lib/db';
 import { obtenerSesionActual } from '@/lib/auth';
 import BotonCerrarSesion from '@/components/BotonCerrarSesion';
-import { PLAN_GRATUITO } from '@/lib/planes';
+import { obtenerPlanGratuito } from '@/lib/planes-bd';
 import DarseDeBaja from './DarseDeBaja';
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
@@ -18,6 +18,7 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
 export default async function CuentaPage() {
   const sesion = await obtenerSesionActual();
   if (!sesion) redirect('/inicio_sesion');
+  const planGratuito = await obtenerPlanGratuito();
 
   const result = await query(
     `SELECT
@@ -131,11 +132,11 @@ export default async function CuentaPage() {
           </>
         ) : (
           <>
-            <p className="text-xl font-extrabold text-[#002547] mb-1">{PLAN_GRATUITO.nombre}</p>
+            <p className="text-xl font-extrabold text-[#002547] mb-1">{planGratuito?.nombre ?? 'Plan Gratuito'}</p>
             <p className="text-sm text-[#42474f] mb-4">
               {ultimoPlan
                 ? `Tu último plan (${ultimoPlan.nombre_plan}) venció el ${ultimoPlan.termino}.`
-                : PLAN_GRATUITO.descripcion}
+                : (planGratuito?.descripcion ?? '')}
             </p>
             <Link
               href="/planes"

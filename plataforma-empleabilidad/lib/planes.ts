@@ -1,6 +1,5 @@
-// Datos de los planes que se muestran en /planes y en el checkout.
-// Están en un solo lugar para que el precio se cambie una sola vez.
-// Más adelante estos valores pueden venir de la tabla public.plan.
+// Constantes y utilidades de planes que pueden usar componentes cliente.
+// Los planes en sí se leen de public.plan en lib/planes-bd.ts (solo servidor).
 
 // Debe coincidir con el DOMAIN public.tipo_pago ('credito', 'debito').
 export type MetodoPago = 'credito' | 'debito';
@@ -11,48 +10,7 @@ export function esMetodoPago(valor: unknown): valor is MetodoPago {
   return typeof valor === 'string' && (METODOS_PAGO as readonly string[]).includes(valor);
 }
 
-export type Plan = {
-  id: 'gratuito' | 'pro';
-  nombre: string;
-  etiqueta: string;
-  precioMensualClp: number;
-  descripcion: string;
-  beneficios: { texto: string; incluido: boolean }[];
-};
-
 export const PORCENTAJE_APROBACION = 80;
-
-export const PLAN_GRATUITO: Plan = {
-  id: 'gratuito',
-  nombre: 'Plan Gratuito',
-  etiqueta: 'Plan por defecto',
-  precioMensualClp: 0,
-  descripcion: 'Viene con tu cuenta. Conoce la plataforma con el módulo introductorio.',
-  beneficios: [
-    { texto: 'Acceso al módulo introductorio', incluido: true },
-    { texto: 'Vista previa de todos los módulos', incluido: true },
-    { texto: 'Módulos de contenido grabado completos', incluido: false },
-    { texto: 'Pruebas de avance por módulo', incluido: false },
-    { texto: 'Desbloqueo progresivo de módulos', incluido: false },
-  ],
-};
-
-export const PLAN_PRO: Plan = {
-  id: 'pro',
-  nombre: 'Plan EmpleaMás Pro',
-  etiqueta: 'Recomendado',
-  precioMensualClp: 30000,
-  descripcion: 'Todo el contenido grabado y las pruebas para avanzar a tu ritmo.',
-  beneficios: [
-    { texto: 'Acceso al módulo introductorio', incluido: true },
-    { texto: 'Acceso a todos los módulos de contenido grabado', incluido: true },
-    { texto: 'Pruebas de avance al final de cada módulo', incluido: true },
-    {
-      texto: `Desbloqueo del siguiente módulo al aprobar con ${PORCENTAJE_APROBACION}% o más`,
-      incluido: true,
-    },
-  ],
-};
 
 // Filas de la tabla comparativa: [característica, gratuito, pro]
 export const COMPARATIVA: { caracteristica: string; gratuito: boolean; pro: boolean }[] = [
@@ -101,3 +59,16 @@ export const ETIQUETA_METODO: Record<MetodoPago, string> = {
   credito: 'Tarjeta de crédito',
   debito: 'Tarjeta de débito',
 };
+
+// Texto que acompaña al precio: 30 → "/ mes", 180 → "/ 6 meses", 365 → "/ año".
+export function textoDuracion(dias: number): string {
+  if (dias % 365 === 0) {
+    const anios = dias / 365;
+    return anios === 1 ? '/ año' : `/ ${anios} años`;
+  }
+  if (dias % 30 === 0) {
+    const meses = dias / 30;
+    return meses === 1 ? '/ mes' : `/ ${meses} meses`;
+  }
+  return `/ ${dias} días`;
+}

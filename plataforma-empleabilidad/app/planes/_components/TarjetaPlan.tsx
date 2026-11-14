@@ -1,19 +1,22 @@
 import Link from 'next/link';
-import { formatearClp, type Plan } from '@/lib/planes';
+import { formatearClp, textoDuracion } from '@/lib/planes';
+import type { PlanBD } from '@/lib/planes-bd';
 
 type Accion =
   | { tipo: 'enlace'; href: string; texto: string }
   | { tipo: 'deshabilitado'; texto: string };
 
 type Props = {
-  plan: Plan;
-  destacado?: boolean;
+  plan: PlanBD;
   accion: Accion;
-  // Texto pequeño bajo el botón, por ejemplo "Te pediremos iniciar sesión".
   nota?: string;
 };
 
-export default function TarjetaPlan({ plan, destacado = false, accion, nota }: Props) {
+export default function TarjetaPlan({ plan, accion, nota }: Props) {
+  // Administrador puede marcar un plan como destacado desde la pagina de admin
+  const destacado = plan.destacado;
+  const esGratis = plan.costo === 0;
+
   return (
     <article
       className={`relative flex flex-col rounded-2xl bg-white p-7 ${
@@ -24,7 +27,7 @@ export default function TarjetaPlan({ plan, destacado = false, accion, nota }: P
     >
       {destacado && (
         <span className="absolute -top-3 right-6 rounded-full bg-[#002546] px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
-          {plan.etiqueta}
+          Recomendado
         </span>
       )}
 
@@ -33,38 +36,31 @@ export default function TarjetaPlan({ plan, destacado = false, accion, nota }: P
           destacado ? 'bg-[#e6f2fb] text-[#002546]' : 'bg-[#f1f4f6] text-[#42474f]'
         }`}
       >
-        {destacado ? plan.nombre : plan.etiqueta}
+        {plan.nombre}
       </span>
 
       <p className="mt-5 flex items-baseline gap-1">
         <span className="text-4xl font-extrabold text-[#002546]">
-          {formatearClp(plan.precioMensualClp)}
+          {esGratis ? 'Gratis' : formatearClp(plan.costo)}
         </span>
-        <span className="text-sm text-[#42474f]">/ mes</span>
+        {!esGratis && (
+          <span className="text-sm text-[#42474f]">{textoDuracion(plan.duracionDias)}</span>
+        )}
       </p>
-      <p className="mt-3 text-sm text-[#42474f]">{plan.descripcion}</p>
+      {plan.descripcion && <p className="mt-3 text-sm text-[#42474f]">{plan.descripcion}</p>}
 
-      <ul className="mt-6 flex flex-col gap-3 border-t border-[#c3c6d0]/40 pt-6 text-sm">
-        {plan.beneficios.map((b) => (
-          <li
-            key={b.texto}
-            className={`flex items-start gap-2 ${b.incluido ? 'text-[#181c1e]' : 'text-[#9aa0a8]'}`}
-          >
-            <span
-              aria-hidden="true"
-              className={`material-symbols-outlined text-[18px] ${
-                b.incluido ? 'text-[#002546]' : 'text-[#c3c6d0]'
-              }`}
-            >
-              {b.incluido ? 'check_circle' : 'block'}
-            </span>
-            <span>
-              <span className="sr-only">{b.incluido ? 'Incluido: ' : 'No incluido: '}</span>
-              {b.texto}
-            </span>
-          </li>
-        ))}
-      </ul>
+      {plan.beneficios.length > 0 && (
+        <ul className="mt-6 flex flex-col gap-3 border-t border-[#c3c6d0]/40 pt-6 text-sm">
+          {plan.beneficios.map((texto, i) => (
+            <li key={`${i}-${texto}`} className="flex items-start gap-2 text-[#181c1e]">
+              <span aria-hidden="true" className="material-symbols-outlined text-[18px] text-[#002546]">
+                check_circle
+              </span>
+              <span>{texto}</span>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <div className="mt-auto pt-8">
         {accion.tipo === 'enlace' ? (
