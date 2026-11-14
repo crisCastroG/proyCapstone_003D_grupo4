@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { query } from '@/lib/db';
 import { obtenerSesionActual } from '@/lib/auth';
 import BotonCerrarSesion from '@/components/BotonCerrarSesion';
-import { obtenerPlanGratuito } from '@/lib/planes-bd';
+import { PLAN_GRATUITO } from '@/lib/planes';
 import DarseDeBaja from './DarseDeBaja';
 
 function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
@@ -18,7 +18,6 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string | null }) {
 export default async function CuentaPage() {
   const sesion = await obtenerSesionActual();
   if (!sesion) redirect('/inicio_sesion');
-  const planGratuito = await obtenerPlanGratuito();
 
   const result = await query(
     `SELECT
@@ -132,11 +131,11 @@ export default async function CuentaPage() {
           </>
         ) : (
           <>
-            <p className="text-xl font-extrabold text-[#002547] mb-1">{planGratuito?.nombre ?? 'Plan Gratuito'}</p>
+            <p className="text-xl font-extrabold text-[#002547] mb-1">{PLAN_GRATUITO.nombre}</p>
             <p className="text-sm text-[#42474f] mb-4">
               {ultimoPlan
                 ? `Tu último plan (${ultimoPlan.nombre_plan}) venció el ${ultimoPlan.termino}.`
-                : (planGratuito?.descripcion ?? '')}
+                : PLAN_GRATUITO.descripcion}
             </p>
             <Link
               href="/planes"
@@ -149,7 +148,15 @@ export default async function CuentaPage() {
       </section>
 
       <section className="bg-white p-6 rounded-xl border border-[#c3c6d0]/30">
-        <h2 className="text-lg font-bold text-[#002547] mb-4">Datos personales</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-[#002547]">Datos personales</h2>
+          <Link
+            href="/modulos/cuenta/editar"
+            className="text-sm font-semibold text-[#006689] border border-[#006689]/40 hover:bg-[#E6F2FB] px-3 py-1.5 rounded-lg transition-colors"
+          >
+            Editar mis datos
+          </Link>
+        </div>
         <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Dato etiqueta="RUN" valor={usuario.run} />
           <Dato etiqueta="Género" valor={usuario.genero} />

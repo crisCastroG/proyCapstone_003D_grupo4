@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
-import { formatearRut, validarRutChileno, validarPasswordSegura } from '@/lib/validators';
+import { formatearRut, validarRutChileno, validarPasswordSegura, validarFechaNacimiento } from '@/lib/validators';
 import { crearTokenSesion } from '@/lib/auth';
 import { VERSION_TERMINOS } from '@/lib/terminos';
 
@@ -57,6 +57,14 @@ export async function POST(request: Request) {
     // Validar género contra el dominio public.genero
     if (!['Femenino', 'Masculino', 'Otros'].includes(genero)) {
       return NextResponse.json({ error: 'Género seleccionado no válido.' }, { status: 400 });
+    }
+
+    // La fecha de nacimiento (opcional) no puede ser futura ni inválida
+    if (fecha_nacimiento) {
+      const f = validarFechaNacimiento(String(fecha_nacimiento));
+      if (!f.valida) {
+        return NextResponse.json({ error: f.error }, { status: 400 });
+      }
     }
 
     // Validar RUN chileno 

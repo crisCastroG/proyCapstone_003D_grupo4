@@ -61,3 +61,42 @@ export function validarPasswordSegura(password: string): {
     errores,
   };
 }
+
+// Fecha de hoy en Chile (YYYY-MM-DD). Se usa para que la fecha de nacimiento nunca sea futura,
+// sin importar la zona horaria del servidor o del navegador.
+export function hoyEnChile(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Santiago',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+}
+
+// La fecha de nacimiento debe ser una fecha real, no futura y no anterior a 1900.
+export function validarFechaNacimiento(fecha: string): { valida: boolean; error?: string } {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    return { valida: false, error: 'La fecha de nacimiento no es válida.' };
+  }
+  const [a, m, d] = fecha.split('-').map(Number);
+  const real = new Date(Date.UTC(a, m - 1, d));
+  if (real.getUTCFullYear() !== a || real.getUTCMonth() !== m - 1 || real.getUTCDate() !== d) {
+    return { valida: false, error: 'La fecha de nacimiento no es válida.' };
+  }
+  if (fecha > hoyEnChile()) {
+    return { valida: false, error: 'La fecha de nacimiento no puede ser posterior a hoy.' };
+  }
+  if (a < 1900) {
+    return { valida: false, error: 'La fecha de nacimiento no es válida.' };
+  }
+  return { valida: true };
+}
+
+// Teléfono chileno: acepta "9 1234 5678", "+56 9 1234 5678", "912345678"... y lo deja como "9 1234 5678".
+export function normalizarTelefonoChile(telefono: string): string | null {
+  let digitos = telefono.replace(/[\s+\-().]/g, '');
+  if (!/^\d+$/.test(digitos)) return null;
+  if (digitos.startsWith('56') && digitos.length === 11) digitos = digitos.slice(2);
+  if (digitos.length !== 9) return null;
+  return `${digitos[0]} ${digitos.slice(1, 5)} ${digitos.slice(5)}`;
+}
