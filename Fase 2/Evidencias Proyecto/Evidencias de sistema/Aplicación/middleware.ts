@@ -8,7 +8,7 @@ export async function middleware(request: NextRequest) {
 
   const sesion = token ? await verificarTokenSesion(token) : null;
 
-  // nProtege rutas que requieren sesión activa 
+  // Protege rutas que requieren sesión activa 
   const esRutaProtegida =
   pathname.startsWith('/modulos') ||
   pathname.startsWith('/contenidos') ||

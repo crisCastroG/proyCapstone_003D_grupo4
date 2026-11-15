@@ -1,4 +1,4 @@
-import { Pool, type PoolClient } from 'pg';
+import { Pool, type PoolClient } from '@/node_modules/@types/pg';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,

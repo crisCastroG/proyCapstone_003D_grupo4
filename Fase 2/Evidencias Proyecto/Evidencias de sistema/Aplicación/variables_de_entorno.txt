@@ -1,0 +1,28 @@
+# --- Base de Datos PostgreSQL ---
+# Opción A: Testeo local
+DATABASE_URL="postgresql://apt_dev:<tu_clave_local>@localhost:5432/empleabilidad_dev"
+
+# Opción B: Producción (Neon.tech)
+# DATABASE_URL="postgresql://<usuario>:<password>@<host>.neon.tech/neondb?sslmode=require&channel_binding=require"
+
+# --- Almacenamiento de Archivos ---
+# Opciones: 'local' para desarrollo | 'uploadthing' para producción
+NEXT_PUBLIC_STORAGE_PROVIDER=local
+UPLOADTHING_TOKEN="<tu_uploadthing_token>"
+UPLOADTHING_APP_ID="<tu_uploadthing_app_id>"
+
+# --- Pasarela de Pagos (Transbank Webpay Plus) ---
+# Credenciales de integración por defecto; reemplazar por credenciales productivas en producción
+TBK_COMMERCE_CODE=597055555532
+TBK_API_KEY="<tu_tbk_api_key>"
+
+# URL base de la aplicación (obligatoria para retornos de Webpay Plus)
+APP_URL="http://localhost:3000"
+
+# --- Servidor de Correo (SMTP) ---
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=tu-correo@gmail.com
+SMTP_PASS=<TU_CONTRASENA_DE_APLICACION>
+SMTP_FROM="Empleamás <tu-correo@gmail.com>"

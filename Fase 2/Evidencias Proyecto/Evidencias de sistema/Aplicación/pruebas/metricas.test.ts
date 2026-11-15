@@ -9,7 +9,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { Client } from 'pg';
+import { Client } from '@/node_modules/@types/pg';
 
 const NOMBRE_BD = `metricas_test_${process.pid}`;
 const urlBase = process.env.TEST_ADMIN_URL ?? process.env.DATABASE_URL;

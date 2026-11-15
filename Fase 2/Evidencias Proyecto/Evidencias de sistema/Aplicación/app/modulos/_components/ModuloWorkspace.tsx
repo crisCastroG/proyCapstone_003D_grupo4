@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import TarjetaProgreso from '../_components/TarjetaProgreso';
+import TarjetaProgreso from './TarjetaProgreso';
 
 interface Contenido {
   id_contenido: number;

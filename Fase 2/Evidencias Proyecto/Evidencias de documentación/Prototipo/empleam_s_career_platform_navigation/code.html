@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Empleamás - Tu próximo empleo comienza aquí</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#e0e3e5",
+                        "tertiary": "#002547",
+                        "surface-variant": "#e0e3e5",
+                        "surface": "#f7fafc",
+                        "outline": "#737780",
+                        "primary-container": "#0d3b66",
+                        "primary": "#0D3B66",
+                        "on-tertiary-fixed": "#001c38",
+                        "on-tertiary-fixed-variant": "#004881",
+                        "surface-container-low": "#f1f4f6",
+                        "secondary-fixed-dim": "#77d1ff",
+                        "surface-container-high": "#e5e9eb",
+                        "primary-fixed-dim": "#a4c9fc",
+                        "error": "#ba1a1a",
+                        "on-secondary-fixed": "#001e2c",
+                        "inverse-primary": "#a4c9fc",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#6ea7ed",
+                        "on-secondary-fixed-variant": "#004d68",
+                        "on-secondary": "#ffffff",
+                        "surface-dim": "#d7dadc",
+                        "inverse-surface": "#2d3133",
+                        "on-secondary-container": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#c2e8ff",
+                        "on-surface-variant": "#42474f",
+                        "on-primary-fixed": "#001c38",
+                        "primary-fixed": "#d3e4ff",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#eef1f3",
+                        "outline-variant": "#c3c6d0",
+                        "secondary": "#006689",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#38BDF5",
+                        "tertiary-fixed-dim": "#a2c9ff",
+                        "surface-bright": "#f7fafc",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#204874",
+                        "background": "#f7fafc",
+                        "tertiary-fixed": "#d3e4ff",
+                        "on-primary-container": "#81a6d7",
+                        "tertiary-container": "#003b6b",
+                        "surface-tint": "#3a608d",
+                        "on-background": "#181c1e",
+                        "on-surface": "#181c1e",
+                        "surface-container": "#ebeef0"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-lg": "48px",
+                        "base": "8px",
+                        "stack-sm": "12px",
+                        "container-max": "1200px",
+                        "stack-md": "24px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Manrope"],
+                        "title-lg": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "headline-md": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "caption": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "display-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        .soft-shadow { box-shadow: 0px 4px 20px rgba(13, 59, 102, 0.05); }
+        .hover-lift:hover { box-shadow: 0px 8px 30px rgba(13, 59, 102, 0.10); transform: translateY(-2px); }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- TopNavBar -->
+<header class="bg-surface-container-lowest sticky top-0 z-50 border-b border-outline-variant shadow-sm w-full">
+<nav class="flex justify-between items-center h-16 px-gutter max-w-container-max mx-auto">
+<div class="flex items-center gap-4">
+<img alt="Empleamás Logo" class="h-8 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQkFPGs6FqYa0Tu8nrgar7cOpH_p99ZUah5hzmfJwLkl_EVtZ3KbVpT8j9SleJy3-ws76coRqTImPVlpW_ZPI3ZHLybVw2wW4QuAGkiFxEr8BhQ_wBj6oKVF9WXZXUHYaVIOK_pMIyK0Dptb1yoPWMO40JF5tvOiDRwMR4SL9_B6UyMqP0qLCfWQpyOuf2Nwd5EV_8FFw0ur8-kzbdwslJ57ofkP-asSuOOF_WAdoWmFVr6jLbYD0EqsPBfV3a357rons"/>
+</div>
+<div class="hidden md:flex items-center gap-8 font-title-lg text-title-lg">
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Módulos</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Asesoría</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Progreso</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors" href="#">Recursos</a>
+</div>
+<div class="flex items-center gap-4">
+<button aria-label="notifications" class="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors scale-95 duration-150 ease-in-out">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button aria-label="settings" class="text-on-surface-variant hover:bg-surface-container-low p-2 rounded-full transition-colors scale-95 duration-150 ease-in-out">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant">
+<img alt="Foto de perfil del usuario" class="w-full h-full object-cover" data-alt="A clean, professional headshot of a confident young professional wearing a business casual outfit, smiling warmly against a bright, well-lit modern office background. The lighting is soft and flattering, creating a trustworthy and approachable mood suitable for a corporate profile avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMw2KqnGFjRksHGrymZFGAIBT-y5SQkI5hK-SBU7MXV7ikG4Fk3mfrFY52H8WQcDFWIMsRnNu0qLtSDmaKx4RzUdvH0LAlfJFxlUyw7zY-phiEfCCNnTp4hoAK6YqJYVjsZP-Ul1zBASyHkDbet7MqpPphl0TDZC8yWMbXm28eTTk6i1u7pGY7NU1sezulDO4takznE0DY_g30Zuuh7pOlWYYBm-Ja6yGabWGeDQEdG_LBXHLwdMBM6Q"/>
+</div>
+</div>
+</nav>
+</header>
+<main>
+<!-- Hero Section -->
+<section class="relative pt-stack-lg pb-24 md:pt-32 md:pb-32 overflow-hidden flex items-center min-h-[80vh]">
+<div class="absolute inset-0 z-0 opacity-10">
+<div class="w-full h-full bg-cover bg-center" data-alt="A highly professional and clean modern office environment bathed in natural sunlight. Several diverse young professionals are actively collaborating around a sleek glass table, examining digital charts on a tablet. The overall color palette is dominated by bright whites, soft grays, and corporate blues. The mood is empowering, energetic, and focused on career advancement and teamwork." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAiRXUXfyhnEg_ewomUWcPyYbgONncezpmfst7UWmXy1qsSN_q3TkMNYgHPmg49LcwygubD_1s-2uouHSXp7ALdAOwPxMqfWAbwNyFQ1M0cRj7DlokV5amhfQhs4RfWXrRVDpiGAoPXQXRdfuZ2_BFnRwdhkBZvOVy13oJ6N_lCXr9oIPLkaT54JHgsVCSRUt9yFVcqXEla80jiu3zeXYf5WJKH-ZowXE9lsOhi9F7nkbmsmNOxq6fD0g')"></div>
+</div>
+<div class="relative z-10 max-w-container-max mx-auto px-gutter grid grid-cols-1 md:grid-cols-2 gap-stack-lg items-center">
+<div class="flex flex-col gap-stack-md text-center md:text-left">
+<h1 class="font-display-lg text-display-lg text-primary">Tu próximo empleo comienza aquí</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl mx-auto md:mx-0">
+                        Asesoría laboral personalizada, herramientas digitales y acompañamiento profesional para impulsar tu carrera y destacar en el mercado actual.
+                    </p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start pt-4">
+<a class="inline-flex items-center justify-center gap-2 bg-secondary-container text-on-secondary-container font-label-md text-label-md px-8 py-4 rounded-full hover:opacity-90 transition-all shadow-sm hover:shadow-md" href="#planes">
+                            Ver Planes
+                            <span class="material-symbols-outlined text-lg">arrow_forward</span>
+</a>
+<a class="inline-flex items-center justify-center gap-2 border border-primary text-primary font-label-md text-label-md px-8 py-4 rounded-full hover:bg-surface-container-low transition-all" href="#como-funciona">
+                            Conoce más
+                        </a>
+</div>
+</div>
+<div class="hidden md:block relative">
+<div class="absolute inset-0 bg-secondary-container/20 rounded-full blur-3xl transform -translate-x-1/4 translate-y-1/4"></div>
+<img alt="Plataforma Empleamás" class="relative z-10 rounded-2xl soft-shadow border border-surface-container-highest w-full object-cover aspect-[4/3]" data-alt="A visually striking composition showing a modern laptop open on a clean white desk, displaying an interactive digital resume dashboard with glowing blue progress bars. Next to it is a sleek cup of coffee and a potted succulent. The lighting is crisp, studio-quality, emphasizing a professional, trustworthy, and technologically advanced atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBi4JuNQTUQ0gXxsp19IAjQayKqKOBCjL7AlCk6yunK_P-mHPNVWC9aRJ4ICPl0ygN5_Vw4KhBZo-dB27rq56_HBEBAG-qpAM1-zE5wpfgNdDIKy1SmUsWLVR6R5Yp7ZdzQeJo8D32lI-nLG5ePH7AFudfQk4ImJe6C1CmIdEU50p7Hb2KjWi8R9po4co_11qwbe6H3UoZvD6BZwLBtGjAw4nw7kIQ5n7gH498cBr0WiRXc2ois7S8Zxw"/>
+</div>
+</div>
+</section>
+<!-- How it works Section -->
+<section class="py-stack-lg bg-surface-container-low" id="como-funciona">
+<div class="max-w-container-max mx-auto px-gutter">
+<div class="text-center mb-stack-lg">
+<h2 class="font-headline-lg text-headline-lg text-primary mb-4">¿Cómo funciona?</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl mx-auto">Un proceso estructurado en tres pasos diseñados para maximizar tus oportunidades de éxito profesional.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-stack-md">
+<!-- Step 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-8 soft-shadow hover-lift transition-all flex flex-col items-center text-center group">
+<div class="w-16 h-16 rounded-full bg-surface-container-low text-primary flex items-center justify-center mb-6 group-hover:bg-secondary-container group-hover:text-on-secondary-container transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 32px;">school</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-3">1. Capacítate</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Accede a módulos formativos clave para actualizar tus habilidades y entender las demandas del mercado laboral actual.</p>
+</div>
+<!-- Step 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-8 soft-shadow hover-lift transition-all flex flex-col items-center text-center group">
+<div class="w-16 h-16 rounded-full bg-surface-container-low text-primary flex items-center justify-center mb-6 group-hover:bg-secondary-container group-hover:text-on-secondary-container transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 32px;">psychology</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-3">2. Prepárate</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Optimiza tu CV, genera tu Perfil Digital QR y domina las entrevistas con nuestras sesiones de simulación personalizadas.</p>
+</div>
+<!-- Step 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-8 soft-shadow hover-lift transition-all flex flex-col items-center text-center group">
+<div class="w-16 h-16 rounded-full bg-surface-container-low text-primary flex items-center justify-center mb-6 group-hover:bg-secondary-container group-hover:text-on-secondary-container transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1; font-size: 32px;">work</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-3">3. Empléate</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Conecta con nuestra red de reclutadores y recibe seguimiento continuo hasta alcanzar tu objetivo profesional.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Pricing Section -->
+<section class="py-stack-lg bg-background" id="planes">
+<div class="max-w-container-max mx-auto px-gutter">
+<div class="text-center mb-stack-lg">
+<h2 class="font-headline-lg text-headline-lg text-primary mb-4">Planes diseñados para ti</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl mx-auto">Invierte en tu futuro con planes transparentes que se adaptan a tus necesidades de búsqueda de empleo.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-stack-md items-center">
+<!-- Basic Plan -->
+<div class="bg-surface-container-lowest rounded-xl p-8 soft-shadow border border-outline-variant flex flex-col h-full">
+<div class="mb-6">
+<h3 class="font-title-lg text-title-lg text-on-surface-variant mb-2">Básico</h3>
+<div class="font-headline-lg text-headline-lg text-primary">$49<span class="font-body-md text-body-md text-on-surface-variant font-normal">/mes</span></div>
+</div>
+<div class="flex-grow">
+<div class="flex items-start gap-3 mb-4">
+<span class="material-symbols-outlined text-secondary-container text-xl mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">Acceso a módulos fundamentales</span>
+</div>
+<div class="flex items-start gap-3 mb-4">
+<span class="material-symbols-outlined text-secondary-container text-xl mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">Guías y plantillas descargables</span>
+</div>
+<div class="flex items-start gap-3 mb-4 opacity-50">
+<span class="material-symbols-outlined text-outline text-xl mt-0.5">cancel</span>
+<span class="font-body-md text-body-md text-on-surface line-through">Perfil Digital QR</span>
+</div>
+</div>
+<div class="mt-8">
+<button class="w-full py-3 rounded-lg border border-primary text-primary font-label-md text-label-md hover:bg-surface-container-low transition-colors">Elegir Básico</button>
+</div>
+</div>
+<!-- Pro Plan (Highlighted) -->
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-md border-t-4 border-t-primary transform md:-translate-y-4 flex flex-col h-full relative z-10">
+<div class="absolute top-0 right-0 bg-primary text-on-primary font-caption text-caption px-3 py-1 rounded-bl-lg rounded-tr-lg">Recomendado</div>
+<div class="mb-6">
+<h3 class="font-title-lg text-title-lg text-primary mb-2">Pro</h3>
+<div class="font-headline-lg text-headline-lg text-primary">$99<span class="font-body-md text-body-md text-on-surface-variant font-normal">/mes</span></div>
+</div>
+<div class="flex-grow">
+<div class="flex items-start gap-3 mb-4">
+<span class="material-symbols-outlined text-primary text-xl mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">Todo lo del Plan Básico</span>
+</div>
+<div class="flex items-start gap-3 mb-4 bg-secondary-container/10 p-2 rounded-lg -mx-2">
+<span class="material-symbols-outlined text-primary text-xl mt-0.5">qr_code_2</span>
+<span class="font-body-md text-body-md font-semibold text-primary">Generación de Perfil Digital QR</span>
+</div>
+<div class="flex items-start gap-3 mb-4">
+<span class="material-symbols-outlined text-primary text-xl mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">1 Sesión simulación de entrevista</span>
+</div>
+<div class="flex items-start gap-3 mb-4 opacity-50">
+<span class="material-symbols-outlined text-outline text-xl mt-0.5">cancel</span>
+<span class="font-body-md text-body-md text-on-surface line-through">Seguimiento personalizado</span>
+</div>
+</div>
+<div class="mt-8">
+<button class="w-full py-3 rounded-lg bg-primary text-on-primary font-label-md text-label-md hover:opacity-90 transition-opacity shadow-sm">Comenzar Pro</button>
+</div>
+</div>
+<!-- Premium Plan -->
+<div class="bg-surface-container-lowest rounded-xl p-8 soft-shadow border border-outline-variant flex flex-col h-full">
+<div class="mb-6">
+<h3 class="font-title-lg text-title-lg text-on-surface-variant mb-2">Premium</h3>
+<div class="font-headline-lg text-headline-lg text-primary">$199<span class="font-body-md text-body-md text-on-surface-variant font-normal">/mes</span></div>
+</div>
+<div class="flex-grow">
+<div class="flex items-start gap-3 mb-4">
+<span class="material-symbols-outlined text-secondary-container text-xl mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">Todo lo del Plan Pro</span>
+</div>
+<div class="flex items-start gap-3 mb-4">
+<span class="material-symbols-outlined text-secondary-container text-xl mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">Seguimiento 1 a 1 semanal</span>
+</div>
+<div class="flex items-start gap-3 mb-4">
+<span class="material-symbols-outlined text-secondary-container text-xl mt-0.5">check_circle</span>
+<span class="font-body-md text-body-md text-on-surface">Acceso directo a red de reclutadores</span>
+</div>
+</div>
+<div class="mt-8">
+<button class="w-full py-3 rounded-lg border border-primary text-primary font-label-md text-label-md hover:bg-surface-container-low transition-colors">Elegir Premium</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Testimonials & Logos -->
+<section class="py-stack-lg bg-surface-container-lowest border-y border-outline-variant">
+<div class="max-w-container-max mx-auto px-gutter">
+<div class="text-center mb-stack-md">
+<h2 class="font-headline-md text-headline-md text-primary mb-8">Nuestros usuarios trabajan en</h2>
+<div class="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+<span class="font-display-lg text-2xl font-bold">TechCorp</span>
+<span class="font-display-lg text-2xl font-bold">GlobalBank</span>
+<span class="font-display-lg text-2xl font-bold">InnovateInc</span>
+<span class="font-display-lg text-2xl font-bold">StartUp Hub</span>
+</div>
+</div>
+<div class="mt-stack-lg grid grid-cols-1 md:grid-cols-2 gap-stack-md">
+<div class="bg-surface p-6 rounded-xl soft-shadow border border-surface-container-highest">
+<div class="flex items-center gap-4 mb-4">
+<div class="w-12 h-12 rounded-full bg-surface-variant overflow-hidden">
+<img alt="Testimonio Laura" class="w-full h-full object-cover" data-alt="A portrait of a smiling young Latina woman in her late 20s, dressed in a smart casual blazer. The background is a slightly blurred modern office space with soft, warm lighting. She exudes confidence and success, representing a satisfied user of a career advisory service." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7O5EoeeJ7Q-Ptm_uj0x8mM11lsxeUo1WXrXuFFuwT4cwE5LZZQgTDC6RjVGrjiN0g8mbQrWIKWW2yJSrd1fPA-dyRkSnnHR8TfGiswStO_iSyooDHQl_CCfmrb3Tk_it8X0vVyBU8954EBHrAxFrjnjtB6zqyvOGHQ6c9TY23RHxNWYXhM6YVFKIC2sR_wbgNaXv2UbThFdPBMx4u1SLRN4w7hBN-1klDYg6UD0ZCXoKQ0CTK-JH8jw"/>
+</div>
+<div>
+<div class="font-label-md text-label-md text-primary">Laura M.</div>
+<div class="font-caption text-caption text-on-surface-variant">Data Analyst</div>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface italic">"Gracias al plan Pro y la simulación de entrevista, logré ganar la confianza necesaria para mi proceso. Hoy estoy en la empresa que siempre quise."</p>
+</div>
+<div class="bg-surface p-6 rounded-xl soft-shadow border border-surface-container-highest">
+<div class="flex items-center gap-4 mb-4">
+<div class="w-12 h-12 rounded-full bg-surface-variant overflow-hidden">
+<img alt="Testimonio Carlos" class="w-full h-full object-cover" data-alt="A portrait of a professional man in his early 30s wearing glasses and a crisp blue shirt. He has a relaxed, genuine smile. The background is a clean, bright studio setting with subtle corporate blue tones. The image conveys trust and professional growth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCL92Erz11QahVsB8SP3t_PQ-_8fnG55VObWHe0lnabT54wfyuhxPAgLcO02Xn5mofUIqV3t5IMEVR3BaP0-Uobi3p4VUqxPNoxsYKFrWn1Gj-U-Ioyeq-1HrDSLozuKNXeQe2iiZXwaaJyyjj_7LVaLIwZ9aSc7Kr7ChcGSFr3pdUDDOWISb-DXhbngz6xBfcypsHZkXAk1liG2D3vIip4p0xvdREigEK7R0Lu6KONmwqHlAYHejZeNw"/>
+</div>
+<div>
+<div class="font-label-md text-label-md text-primary">Carlos R.</div>
+<div class="font-caption text-caption text-on-surface-variant">Project Manager</div>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface italic">"El seguimiento personalizado del plan Premium marcó toda la diferencia. No solo mejoré mi perfil, sino que entendí mi valor en el mercado."</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-tertiary w-full border-t border-outline-variant">
+<div class="flex flex-col md:flex-row justify-between items-center px-gutter py-stack-md max-w-container-max mx-auto">
+<div class="mb-4 md:mb-0">
+<span class="font-title-lg text-title-lg text-on-tertiary block mb-2">Empleamás</span>
+<p class="font-caption text-caption text-on-tertiary">© 2024 Empleamás. Asesorías laborales que impulsan tu futuro.</p>
+</div>
+<nav class="flex gap-6 mb-4 md:mb-0">
+<a class="font-caption text-caption text-on-tertiary/80 hover:text-on-tertiary hover:opacity-100 transition-opacity" href="#">Privacidad</a>
+<a class="font-caption text-caption text-on-tertiary/80 hover:text-on-tertiary hover:opacity-100 transition-opacity" href="#">Términos</a>
+<a class="font-caption text-caption text-on-tertiary/80 hover:text-on-tertiary hover:opacity-100 transition-opacity" href="#">Soporte</a>
+<a class="font-caption text-caption text-on-tertiary/80 hover:text-on-tertiary hover:opacity-100 transition-opacity" href="#">Contacto</a>
+</nav>
+<div class="flex gap-4">
+<a aria-label="LinkedIn" class="text-on-tertiary/80 hover:text-on-tertiary transition-opacity" href="#">
+<svg class="w-5 h-5 fill-current" viewbox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"></path></svg>
+</a>
+</div>
+</div>
+</footer>
+</body></html>

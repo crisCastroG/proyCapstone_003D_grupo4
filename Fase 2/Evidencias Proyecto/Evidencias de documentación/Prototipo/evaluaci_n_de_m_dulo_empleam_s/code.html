@@ -1,0 +1,331 @@
+<!DOCTYPE html><html class="light" lang="es" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Empleamás - Cuestionario Módulo 2</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#81a6d7",
+                        "inverse-primary": "#a4c9fc",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface-variant": "#e0e3e5",
+                        "secondary-fixed-dim": "#77d1ff",
+                        "outline-variant": "#c3c6d0",
+                        "on-primary-fixed": "#001c38",
+                        "outline": "#737780",
+                        "on-secondary-fixed-variant": "#004d68",
+                        "on-secondary-container": "#004f6b",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed": "#d3e4ff",
+                        "surface-tint": "#3a608d",
+                        "on-background": "#181c1e",
+                        "on-tertiary-fixed": "#001c38",
+                        "surface-bright": "#f7fafc",
+                        "tertiary-fixed-dim": "#a2c9ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#ebeef0",
+                        "background": "#f7fafc",
+                        "secondary-fixed": "#c2e8ff",
+                        "secondary": "#006689",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#181c1e",
+                        "primary-fixed": "#d3e4ff",
+                        "on-tertiary-fixed-variant": "#004881",
+                        "primary-container": "#0d3b66",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "primary": "#002546",
+                        "on-tertiary-container": "#6ea7ed",
+                        "surface-container-low": "#f1f4f6",
+                        "on-error-container": "#93000a",
+                        "primary-fixed-dim": "#a4c9fc",
+                        "tertiary": "#002547",
+                        "on-surface-variant": "#42474f",
+                        "surface": "#f7fafc",
+                        "inverse-surface": "#2d3133",
+                        "secondary-container": "#44c5fd",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e5e9eb",
+                        "on-secondary-fixed": "#001e2c",
+                        "on-primary-fixed-variant": "#204874",
+                        "tertiary-container": "#003b6b",
+                        "inverse-on-surface": "#eef1f3",
+                        "surface-dim": "#d7dadc"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "base": "8px",
+                        "margin-mobile": "16px",
+                        "stack-lg": "48px",
+                        "container-max": "1200px",
+                        "stack-sm": "12px",
+                        "stack-md": "24px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Manrope"],
+                        "label-md": ["Manrope"],
+                        "headline-lg": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "caption": ["Manrope"],
+                        "headline-lg-mobile": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "headline-md": ["Manrope"],
+                        "title-lg": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "caption": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; background-color: #F7FAFC; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .filled-icon { font-variation-settings: 'FILL' 1; }
+        
+        /* Custom Radio Button Styling */
+        input[type="radio"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background-color: transparent;
+            margin: 0;
+            font: inherit;
+            color: currentColor;
+            width: 1.15em;
+            height: 1.15em;
+            border: 2px solid #0D3B66; /* primary-container */
+            border-radius: 50%;
+            display: grid;
+            place-content: center;
+        }
+
+        input[type="radio"]::before {
+            content: "";
+            width: 0.65em;
+            height: 0.65em;
+            border-radius: 50%;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em #006689; /* secondary */
+        }
+
+        input[type="radio"]:checked::before {
+            transform: scale(1);
+        }
+        
+        .option-card:has(input[type="radio"]:checked) {
+            border-color: #006689; /* secondary */
+            background-color: #E6F2FB; /* subtle highlight - using secondary-fixed conceptually */
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased flex flex-col min-h-screen">
+<!-- TopNavBar (Responsive Pivot: Hidden on Mobile, Visible on Desktop) -->
+<header class="hidden md:block bg-surface-container-lowest dark:bg-inverse-surface shadow-sm docked full-width top-0 z-50">
+<div class="flex justify-between items-center px-gutter py-4 w-full max-w-container-max mx-auto">
+<!-- Brand Logo -->
+<div class="text-title-lg font-title-lg font-extrabold text-primary dark:text-primary-fixed-dim">
+                Empleamás
+            </div>
+<!-- Navigation Links -->
+<nav class="flex gap-stack-md">
+<a class="text-secondary font-bold border-b-2 border-secondary pb-1 flex items-center gap-base" href="#">
+                    Mis Módulos
+                </a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-secondary dark:hover:text-secondary-fixed-dim transition-colors flex items-center gap-base" href="#">
+                    Recursos
+                </a>
+<a class="text-on-surface-variant dark:text-outline-variant hover:text-secondary dark:hover:text-secondary-fixed-dim transition-colors flex items-center gap-base" href="#">
+                    Asesoría
+                </a>
+</nav>
+<!-- Trailing Icons -->
+<div class="flex gap-base text-secondary dark:text-secondary-fixed-dim">
+<button aria-label="notifications" class="p-2 hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button aria-label="account_circle" class="p-2 hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar (Hidden on Mobile) -->
+<aside class="hidden md:flex h-full w-64 flex-col bg-surface-container-low dark:bg-surface-dim border-r border-outline-variant dark:border-outline p-stack-md z-40 sticky top-0" style="height: calc(100vh - 73px);">
+<!-- Header/Profile Area -->
+<div class="mb-stack-lg text-center">
+<div class="w-20 h-20 mx-auto rounded-full overflow-hidden mb-stack-sm border-2 border-surface-container-lowest shadow-sm bg-surface-container-highest">
+<img alt="Usuario Perfil" class="w-full h-full object-cover" data-alt="A professional headshot of a modern corporate employee, soft studio lighting, smiling slightly, against a neutral blurred office background. The style is clean, trustworthy, and matches a premium corporate platform aesthetic with subtle cool-toned light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZcACPNneKp8DB8OzZ7Bg-WHSV7nZeDlDzZ3ihpRmxqJxoKNvHWvYJCbRQLiHaAratBEfkD3uhf0lrNAQMYjhk1LMOF9fWL4s5j32M6ToR73d0-sd31NlzidvKwl1gYZUEK3fGlih3eDU2lpUiqw3P7GC4jfKCFVVEdy_Y8myllvyEgeG39TAeW_2LMGSFg6wXYMXiX_2R75Jm0RD1Ap7PxPLmLjIWiaC5k2IRvMmxOgF5Asqv0vEUAw">
+</div>
+<h3 class="text-title-lg font-title-lg text-primary">Progreso de Ruta</h3>
+<p class="text-label-md font-label-md text-on-surface-variant mt-1">65% Completado</p>
+<!-- Mini Progress Bar -->
+<div class="w-full bg-[#E6F2FB] rounded-full h-2 mt-3">
+<div class="bg-gradient-to-r from-[#38BDF5] to-[#2566A8] h-2 rounded-full" style="width: 65%"></div>
+</div>
+</div>
+<!-- Navigation Tabs -->
+
+<!-- CTA -->
+<div class="mt-auto pt-stack-md">
+
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto bg-surface p-gutter md:p-stack-lg">
+<div class="max-w-[800px] mx-auto">
+<!-- Quiz Header -->
+<div class="mb-stack-md flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div>
+<span class="text-secondary text-label-md font-label-md uppercase tracking-wider block mb-1">Módulo 2: Currículum de Alto Impacto</span>
+<h1 class="text-headline-md font-headline-md text-primary-container md:text-headline-lg font-headline-lg">Evaluación de Conocimientos</h1>
+</div>
+<!-- Timer -->
+<div class="flex items-center gap-2 bg-surface-container-lowest px-4 py-2 rounded-full shadow-sm border border-outline-variant/30 text-on-surface-variant">
+<span class="material-symbols-outlined text-secondary">timer</span>
+<span class="text-label-md font-label-md font-mono" id="quiz-timer">14:37</span>
+</div>
+</div>
+<!-- Progress Area -->
+<div class="mb-stack-lg">
+<div class="flex justify-between items-end mb-2">
+<span class="text-body-md font-body-md text-on-surface font-semibold">Pregunta 3 de 10</span>
+<span class="text-caption font-caption text-on-surface-variant">30%</span>
+</div>
+<!-- Custom Progress Bar strictly following Style Guidance -->
+<div class="w-full bg-[#E6F2FB] rounded-full h-2">
+<div class="bg-gradient-to-r from-[#38BDF5] to-[#2566A8] h-2 rounded-full transition-all duration-500" style="width: 30%"></div>
+</div>
+</div>
+<!-- Question Card (Glassmorphism/Premium feel) -->
+<div class="bg-surface-container-lowest rounded-xl shadow-[0px_4px_20px_rgba(13,59,102,0.05)] border-l-4 border-primary p-gutter md:p-stack-md mb-stack-lg relative overflow-hidden">
+<!-- Decorative background element for premium feel -->
+<div class="absolute top-0 right-0 w-32 h-32 bg-secondary-fixed/20 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+<h2 class="text-title-lg font-title-lg text-on-surface mb-stack-md relative z-10 leading-relaxed">
+                        ¿Cuál es el objetivo principal de un resumen ejecutivo en el CV?
+                    </h2>
+<!-- Options List -->
+<form class="flex flex-col gap-stack-sm relative z-10">
+<label class="option-card flex items-start gap-4 p-4 rounded-lg border border-outline-variant hover:border-secondary cursor-pointer transition-colors bg-surface-container-lowest">
+<div class="pt-1">
+<input name="quiz_q3" type="radio" value="A">
+</div>
+<span class="text-body-md font-body-md text-on-surface">
+                                Listar detalladamente todas las tareas realizadas en cada empleo anterior, desde el inicio de la carrera profesional.
+                            </span>
+</label>
+<label class="option-card flex items-start gap-4 p-4 rounded-lg border border-outline-variant hover:border-secondary cursor-pointer transition-colors bg-surface-container-lowest">
+<div class="pt-1">
+<input name="quiz_q3" type="radio" value="B">
+</div>
+<span class="text-body-md font-body-md text-on-surface">
+                                Proporcionar los datos de contacto personal y referencias familiares para que el reclutador pueda verificar antecedentes.
+                            </span>
+</label>
+<label class="option-card flex items-start gap-4 p-4 rounded-lg border border-outline-variant hover:border-secondary cursor-pointer transition-colors bg-surface-container-lowest">
+<div class="pt-1">
+<input name="quiz_q3" type="radio" value="C">
+</div>
+<span class="text-body-md font-body-md text-on-surface">
+                                Captar rápidamente la atención del reclutador destacando la propuesta de valor única, habilidades clave y principales logros del candidato.
+                            </span>
+</label>
+<label class="option-card flex items-start gap-4 p-4 rounded-lg border border-outline-variant hover:border-secondary cursor-pointer transition-colors bg-surface-container-lowest">
+<div class="pt-1">
+<input name="quiz_q3" type="radio" value="D">
+</div>
+<span class="text-body-md font-body-md text-on-surface">
+                                Explicar detalladamente los motivos por los cuales el candidato dejó sus empleos anteriores o fue despedido.
+                            </span>
+</label>
+</form>
+</div>
+<!-- Navigation Buttons -->
+<div class="flex justify-between items-center pt-stack-sm">
+<!-- Secondary/Ghost Button for Previous -->
+<button class="px-6 py-3 rounded-lg text-primary-container font-label-md text-label-md hover:bg-[#E6F2FB] transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined">arrow_back</span>
+                        Anterior
+                    </button>
+<!-- Primary Button for Next -->
+<button class="px-8 py-3 rounded-lg bg-[#38BDF5] text-white font-label-md text-label-md hover:bg-secondary transition-colors shadow-sm flex items-center gap-2">
+                        Siguiente
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Bottom Navigation (Visible only on mobile, suppressed on focused journeys usually, but adding for completeness based on logic provided if deemed a destination, though Quiz is usually transactional. Assuming it's part of the core learning path viewable on mobile). -->
+<nav class="md:hidden fixed bottom-0 w-full bg-surface-container-lowest shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-50 pb-safe">
+<div class="flex justify-around items-center h-16">
+<a class="flex flex-col items-center justify-center w-full h-full text-on-surface-variant hover:text-secondary transition-colors" href="#">
+<span class="material-symbols-outlined">library_books</span>
+<span class="text-[10px] font-medium mt-1">Módulos</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-secondary" href="#">
+<!-- Active indicator -->
+<div class="bg-secondary-container/30 px-4 py-1 rounded-full mb-1">
+<span class="material-symbols-outlined filled-icon">quiz</span>
+</div>
+<span class="text-[10px] font-bold">Quiz</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full h-full text-on-surface-variant hover:text-secondary transition-colors" href="#">
+<span class="material-symbols-outlined">support_agent</span>
+<span class="text-[10px] font-medium mt-1">Asesoría</span>
+</a>
+</div>
+</nav>
+<script>
+        // Simple timer logic for demonstration
+        document.addEventListener('DOMContentLoaded', () => {
+            const timerDisplay = document.getElementById('quiz-timer');
+            let timeLeft = 14 * 60 + 59; // 14:59
+
+            const interval = setInterval(() => {
+                if(timeLeft <= 0) {
+                    clearInterval(interval);
+                    timerDisplay.textContent = "00:00";
+                    timerDisplay.classList.add('text-error');
+                    return;
+                }
+                
+                timeLeft--;
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                
+                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                if(timeLeft < 60) {
+                    timerDisplay.parentElement.classList.add('border-error', 'text-error', 'bg-error-container/20');
+                }
+            }, 1000);
+        });
+    </script>
+
+
+</body></html>
