@@ -1,5 +1,28 @@
 import { query } from '@/lib/db';
 
+export async function verificarPlanProUsuario(usuarioId: number): Promise<boolean> {
+  if (!usuarioId) return false;
+
+  try {
+    const resPlan = await query(
+      `SELECT 1
+       FROM public.plan_usuario pu
+       INNER JOIN public.plan p ON p.id_plan = pu.plan_id_plan
+       LEFT JOIN public.pago pg ON pg.id_pago = pu.pago_id_pago
+       WHERE pu.usuario_id_usuario = $1
+         AND p.costo_plan > 0
+         AND (pu.fecha_termino IS NULL OR pu.fecha_termino > NOW())
+         AND (pu.pago_id_pago IS NULL OR LOWER(COALESCE(pg.estado_pago::text, 'aprobado')) = 'aprobado')
+       LIMIT 1;`,
+      [usuarioId]
+    );
+    return resPlan.rows.length > 0;
+  } catch (e) {
+    console.warn('No se pudo verificar el plan del usuario:', e);
+    return false;
+  }
+}
+
 export async function obtenerProgresoUsuario(idUsuario: number) {
   let totalLecciones = 0;
   let totalEvaluaciones = 0;
@@ -82,6 +105,8 @@ export async function obtenerProgresoUsuario(idUsuario: number) {
 }
 
 export async function obtenerEstructuraConBloqueos(usuarioId: number) {
+  const tienePlanPro = await verificarPlanProUsuario(usuarioId);
+
   let resModulos: { rows: any[] } = { rows: [] };
   try {
     resModulos = await query(
@@ -98,6 +123,7 @@ export async function obtenerEstructuraConBloqueos(usuarioId: number) {
       console.error('Error al consultar módulos:', err);
     }
   }
+
   let resContenidos: { rows: any[] } = { rows: [] };
   try {
     resContenidos = await query(
@@ -159,10 +185,11 @@ export async function obtenerEstructuraConBloqueos(usuarioId: number) {
     } catch (e) {}
   }
 
-  let anteriorCompletado = true; 
+  let anteriorCompletado = true;
 
   const modulosProcesados = resModulos.rows.map((m: any) => {
     const esGratuito = m.es_gratuito !== undefined ? Boolean(m.es_gratuito) : true;
+    const tieneAccesoAlModulo = esGratuito || tienePlanPro;
 
     const lecciones = resContenidos.rows
       .filter((c: any) => Number(c.modulo_id_modulo) === Number(m.id_modulo))
@@ -187,7 +214,7 @@ export async function obtenerEstructuraConBloqueos(usuarioId: number) {
     const itemsConBloqueo = itemsUnificados.map((item: any) => {
       let bloqueado = false;
 
-      if (!esGratuito) {
+      if (!tieneAccesoAlModulo) {
         bloqueado = true;
       } else {
         bloqueado = !anteriorCompletado;
@@ -209,7 +236,7 @@ export async function obtenerEstructuraConBloqueos(usuarioId: number) {
       titulo: m.titulo,
       posicion: Number(m.posicion),
       es_gratuito: esGratuito,
-      bloqueado: !esGratuito || (totalItems > 0 && itemsConBloqueo[0].bloqueado),
+      bloqueado: !tieneAccesoAlModulo || (totalItems > 0 && itemsConBloqueo[0].bloqueado),
       totalItems,
       completadosItems,
       items: itemsConBloqueo,

@@ -48,28 +48,29 @@ interface ResumenProgreso {
 
 type ItemModuloUnificado =
   | {
-    tipo: 'leccion';
-    id: number;
-    orden: number;
-    titulo: string;
-    duracion?: number;
-    estado?: string;
-    bloqueado?: boolean;
-  }
+      tipo: 'leccion';
+      id: number;
+      orden: number;
+      titulo: string;
+      duracion?: number;
+      estado?: string;
+      bloqueado?: boolean;
+    }
   | {
-    tipo: 'evaluacion';
-    id: number;
-    orden: number;
-    titulo: string;
-    duracion_minutos: number;
-    porcentaje_minimo_aprobacion: number;
-    estado?: string;
-    bloqueado?: boolean;
-  };
+      tipo: 'evaluacion';
+      id: number;
+      orden: number;
+      titulo: string;
+      duracion_minutos: number;
+      porcentaje_minimo_aprobacion: number;
+      estado?: string;
+      bloqueado?: boolean;
+    };
 
 export default function ModuloWorkspace() {
   const router = useRouter();
   const [nombreUsuario, setNombreUsuario] = useState<string>('Usuario');
+  const [tienePlanPro, setTienePlanPro] = useState<boolean>(false);
   const [modulos, setModulos] = useState<Modulo[]>([]);
   const [resumen, setResumen] = useState<ResumenProgreso>({
     totalLecciones: 0,
@@ -96,6 +97,8 @@ export default function ModuloWorkspace() {
         if (data.usuario?.nombre) {
           setNombreUsuario(data.usuario.nombre);
         }
+
+        setTienePlanPro(Boolean(data.tienePlanPro));
 
         const modulosObtenidos: Modulo[] = data.modulos || [];
         setModulos(modulosObtenidos);
@@ -183,7 +186,7 @@ export default function ModuloWorkspace() {
                 const estaDesplegado = Boolean(modulosAbiertos[modulo.id_modulo]);
                 const esCompletado = modulo.estado === 'completado';
                 const estaBloqueado = Boolean(modulo.bloqueado);
-                const esPremium = estaBloqueado || modulo.es_gratuito === false;
+                const esPremium = !tienePlanPro && modulo.es_gratuito === false;
 
                 const leccionesMapeadas: ItemModuloUnificado[] = (modulo.contenidos || []).map((c) => ({
                   tipo: 'leccion',
@@ -215,30 +218,32 @@ export default function ModuloWorkspace() {
                 return (
                   <article
                     key={modulo.id_modulo}
-                    className={`bg-white rounded-xl shadow-[0px_4px_20px_rgba(13,59,102,0.05)] border transition-all duration-200 overflow-hidden ${estaBloqueado
-                      ? 'bg-slate-50 border-slate-200'
-                      : esCompletado
-                        ? 'border-l-4 border-l-[#006689] border-t border-r border-b border-[#E6F2FB]'
-                        : 'border-l-4 border-l-[#002547] border-t border-r border-b border-[#E6F2FB]'
-                      }`}
+                    className={`bg-white rounded-xl shadow-[0px_4px_20px_rgba(13,59,102,0.05)] border transition-all duration-200 overflow-hidden ${
+                      estaBloqueado
+                        ? 'bg-slate-50 border-slate-200'
+                        : esCompletado
+                          ? 'border-l-4 border-l-[#006689] border-t border-r border-b border-[#E6F2FB]'
+                          : 'border-l-4 border-l-[#002547] border-t border-r border-b border-[#E6F2FB]'
+                    }`}
                   >
-                    {/* Cabecera Módulo */}
                     <div
                       onClick={() => handleModuloClick(modulo.id_modulo, estaBloqueado)}
                       className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 select-none cursor-pointer hover:bg-slate-100/60 transition-colors"
                     >
                       <div className="flex items-start sm:items-center gap-4 flex-grow">
                         <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${estaBloqueado ? 'bg-slate-200 text-slate-500' : 'bg-[#E6F2FB]'
-                            }`}
+                          className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
+                            estaBloqueado ? 'bg-slate-200 text-slate-500' : 'bg-[#E6F2FB]'
+                          }`}
                         >
                           <span
-                            className={`material-symbols-outlined font-bold ${estaBloqueado
-                              ? 'text-slate-400'
-                              : esCompletado
-                                ? 'text-[#006689]'
-                                : 'text-[#38BDF5]'
-                              }`}
+                            className={`material-symbols-outlined font-bold ${
+                              estaBloqueado
+                                ? 'text-slate-400'
+                                : esCompletado
+                                  ? 'text-[#006689]'
+                                  : 'text-[#38BDF5]'
+                            }`}
                           >
                             {estaBloqueado ? 'lock' : esCompletado ? 'check_circle' : 'play_circle'}
                           </span>
@@ -247,12 +252,13 @@ export default function ModuloWorkspace() {
                         <div>
                           <div className="flex items-center gap-2 mb-1">
                             <span
-                              className={`inline-block px-3 py-0.5 rounded-full text-xs font-semibold ${estaBloqueado
-                                ? 'bg-slate-200 text-slate-600'
-                                : esCompletado
-                                  ? 'bg-[#E6F2FB] text-[#006689]'
-                                  : 'bg-[#38BDF5]/10 text-[#004f6b] border border-[#38BDF5]/20'
-                                }`}
+                              className={`inline-block px-3 py-0.5 rounded-full text-xs font-semibold ${
+                                estaBloqueado
+                                  ? 'bg-slate-200 text-slate-600'
+                                  : esCompletado
+                                    ? 'bg-[#E6F2FB] text-[#006689]'
+                                    : 'bg-[#38BDF5]/10 text-[#004f6b] border border-[#38BDF5]/20'
+                              }`}
                             >
                               {estaBloqueado ? 'Bloqueado' : esCompletado ? 'Completado' : 'En curso'}
                             </span>
@@ -261,8 +267,9 @@ export default function ModuloWorkspace() {
                             </span>
                           </div>
                           <h3
-                            className={`text-base font-bold ${estaBloqueado ? 'text-slate-600' : 'text-[#002547]'
-                              }`}
+                            className={`text-base font-bold ${
+                              estaBloqueado ? 'text-slate-600' : 'text-[#002547]'
+                            }`}
                           >
                             {numeroModulo}. {modulo.titulo}
                           </h3>
@@ -309,19 +316,21 @@ export default function ModuloWorkspace() {
                               return (
                                 <div
                                   key={`l_${item.id}`}
-                                  className={`bg-white p-4 rounded-lg border flex items-center justify-between gap-4 transition-colors ${contenidoBloqueado
-                                    ? 'border-slate-200 bg-slate-50/70'
-                                    : 'border-[#E2E8F0] hover:border-[#38BDF5]'
-                                    }`}
+                                  className={`bg-white p-4 rounded-lg border flex items-center justify-between gap-4 transition-colors ${
+                                    contenidoBloqueado
+                                      ? 'border-slate-200 bg-slate-50/70'
+                                      : 'border-[#E2E8F0] hover:border-[#38BDF5]'
+                                  }`}
                                 >
                                   <div className="flex items-center gap-3">
                                     <span
-                                      className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${contenidoBloqueado
-                                        ? 'bg-slate-200 text-slate-400'
-                                        : leccionCompletada
-                                          ? 'bg-[#E6F2FB] text-[#006689]'
-                                          : 'bg-[#E6F2FB] text-[#002547]'
-                                        }`}
+                                      className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center ${
+                                        contenidoBloqueado
+                                          ? 'bg-slate-200 text-slate-400'
+                                          : leccionCompletada
+                                            ? 'bg-[#E6F2FB] text-[#006689]'
+                                            : 'bg-[#E6F2FB] text-[#002547]'
+                                      }`}
                                     >
                                       {contenidoBloqueado ? (
                                         <span className="material-symbols-outlined text-sm">
@@ -337,8 +346,9 @@ export default function ModuloWorkspace() {
                                     </span>
                                     <div>
                                       <h5
-                                        className={`text-sm font-semibold ${contenidoBloqueado ? 'text-slate-400' : 'text-[#002547]'
-                                          }`}
+                                        className={`text-sm font-semibold ${
+                                          contenidoBloqueado ? 'text-slate-400' : 'text-[#002547]'
+                                        }`}
                                       >
                                         {item.titulo}
                                       </h5>
@@ -374,10 +384,11 @@ export default function ModuloWorkspace() {
                             return (
                               <div
                                 key={`t_${item.id}`}
-                                className={`bg-white p-4 rounded-lg border flex items-center justify-between gap-4 transition-colors ${evaluacionBloqueada
-                                  ? 'border-slate-200 bg-slate-50/70'
-                                  : 'border-indigo-200 hover:border-indigo-400'
-                                  }`}
+                                className={`bg-white p-4 rounded-lg border flex items-center justify-between gap-4 transition-colors ${
+                                  evaluacionBloqueada
+                                    ? 'border-slate-200 bg-slate-50/70'
+                                    : 'border-indigo-200 hover:border-indigo-400'
+                                }`}
                               >
                                 <div className="flex items-center gap-3">
                                   <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center font-extrabold text-xs shrink-0 border border-indigo-100">
@@ -391,8 +402,9 @@ export default function ModuloWorkspace() {
                                         {item.orden}
                                       </span>
                                       <h5
-                                        className={`text-sm font-bold ${evaluacionBloqueada ? 'text-slate-400' : 'text-[#002547]'
-                                          }`}
+                                        className={`text-sm font-bold ${
+                                          evaluacionBloqueada ? 'text-slate-400' : 'text-[#002547]'
+                                        }`}
                                       >
                                         {item.titulo}
                                       </h5>
@@ -451,10 +463,11 @@ export default function ModuloWorkspace() {
                     router.push('/perfil');
                   }
                 }}
-                className={`bg-gradient-to-br from-[#002547] to-[#0d3b66] rounded-xl p-6 shadow-[0px_4px_20px_rgba(13,59,102,0.05)] text-white relative overflow-hidden transition-all ${perfilHabilitado
+                className={`bg-gradient-to-br from-[#002547] to-[#0d3b66] rounded-xl p-6 shadow-[0px_4px_20px_rgba(13,59,102,0.05)] text-white relative overflow-hidden transition-all ${
+                  perfilHabilitado
                     ? 'cursor-pointer group hover:shadow-lg'
                     : 'cursor-not-allowed opacity-90'
-                  }`}
+                }`}
               >
                 <div className="relative z-10 flex flex-col justify-between">
                   <div>

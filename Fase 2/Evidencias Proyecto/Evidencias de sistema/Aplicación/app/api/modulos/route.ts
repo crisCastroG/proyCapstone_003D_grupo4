@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { obtenerSesionActual } from '@/lib/auth';
-import { obtenerProgresoUsuario } from '@/lib/progreso';
+import { obtenerProgresoUsuario, verificarPlanProUsuario } from '@/lib/progreso';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,25 +12,7 @@ export async function GET() {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    // Verificar si el usuario tiene un Plan Pro activo y vigente
-    let tienePlanPro = false;
-    try {
-      const resPlan = await query(
-        `SELECT 1
-         FROM public.plan_usuario pu
-         INNER JOIN public.plan p ON p.id_plan = pu.plan_id_plan
-         LEFT JOIN public.pago pg ON pg.id_pago = pu.pago_id_pago
-         WHERE pu.usuario_id_usuario = $1
-           AND p.costo_plan > 0
-           AND (pu.fecha_termino IS NULL OR pu.fecha_termino > NOW())
-           AND (pu.pago_id_pago IS NULL OR LOWER(COALESCE(pg.estado_pago::text, 'aprobado')) = 'aprobado')
-         LIMIT 1;`,
-        [sesion.id_usuario]
-      );
-      tienePlanPro = resPlan.rows.length > 0;
-    } catch (e) {
-      console.warn('No se pudo verificar el plan del usuario:', e);
-    }
+    const tienePlanPro = await verificarPlanProUsuario(sesion.id_usuario);
 
     let resModulos: { rows: any[] } = { rows: [] };
     try {
@@ -45,7 +27,6 @@ export async function GET() {
       );
     }
 
-    // Obtener contenidos
     const resContenidos = await query(
       `SELECT id_contenido, titulo_contenido AS titulo, descripcion_contenido AS descripcion, 
               orden_contenido AS orden, duracion_estimada AS duracion, modulo_id_modulo
@@ -54,7 +35,6 @@ export async function GET() {
        ORDER BY orden_contenido ASC;`
     );
 
-    // Obtener evaluaciones
     let resEvaluaciones: { rows: any[] } = { rows: [] };
     try {
       resEvaluaciones = await query(
@@ -68,7 +48,6 @@ export async function GET() {
       console.warn('Evaluaciones no disponibles para navegación:', e);
     }
 
-    // Consultar avances del usuario
     const leccionesCompletadasIds = new Set<number>();
     const evalAprobadasIds = new Set<number>();
 
@@ -94,7 +73,6 @@ export async function GET() {
 
     const modulosFormateados = resModulos.rows.map((m) => {
       const esGratuito = m.es_gratuito !== undefined ? Boolean(m.es_gratuito) : true;
-      // El usuario tiene acceso si el módulo es gratuito O si posee un Plan Pro activo
       const tieneAccesoAlModulo = esGratuito || tienePlanPro;
 
       const lecciones = resContenidos.rows
@@ -154,10 +132,13 @@ export async function GET() {
 
       const totalItems = itemsUnificados.length;
 
-      const primerItemBloqueado = totalItems > 0
-        ? (contenidosProcesados.find((c) => c.id_contenido === itemsUnificados[0].id) ||
-           evaluacionesProcesadas.find((e) => e.id_evaluacion === itemsUnificados[0].id))?.bloqueado
-        : !tieneAccesoAlModulo;
+      const primerItemBloqueado =
+        totalItems > 0
+          ? (
+              contenidosProcesados.find((c) => c.id_contenido === itemsUnificados[0].id) ||
+              evaluacionesProcesadas.find((e) => e.id_evaluacion === itemsUnificados[0].id)
+            )?.bloqueado
+          : !tieneAccesoAlModulo;
 
       const moduloBloqueado = !tieneAccesoAlModulo || Boolean(primerItemBloqueado);
       const estadoModulo = completadosCount === totalItems && totalItems > 0 ? 'completado' : 'en_curso';
@@ -181,6 +162,7 @@ export async function GET() {
 
     return NextResponse.json({
       usuario: { nombre: sesion.nombre },
+      tienePlanPro,
       modulos: modulosFormateados,
       resumenProgreso: {
         totalLecciones: progreso.totalItems,

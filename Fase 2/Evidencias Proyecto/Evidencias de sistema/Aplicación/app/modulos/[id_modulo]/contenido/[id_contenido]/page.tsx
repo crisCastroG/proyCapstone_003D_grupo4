@@ -44,6 +44,21 @@ interface DetalleContenido {
   modulo_posicion: number;
 }
 
+function obtenerUrlEmbedVideo(url?: string): { esArchivoDirecto: boolean; src: string } {
+  if (!url) return { esArchivoDirecto: false, src: '' };
+
+  if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+    return { esArchivoDirecto: true, src: url };
+  }
+
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/);
+  if (ytMatch?.[1]) {
+    return { esArchivoDirecto: false, src: `https://www.youtube.com/embed/${ytMatch[1]}` };
+  }
+
+  return { esArchivoDirecto: false, src: url };
+}
+
 export default function ContenidoViewPage() {
   const params = useParams();
   const router = useRouter();
@@ -56,7 +71,6 @@ export default function ContenidoViewPage() {
   const [navAnterior, setNavAnterior] = useState<ItemNav | null>(null);
   const [navSiguiente, setNavSiguiente] = useState<ItemNav | null>(null);
 
-  // Estados de Progreso
   const [progresoGlobal, setProgresoGlobal] = useState<number>(0);
   const [totalItems, setTotalItems] = useState<number>(0);
   const [completadosItems, setCompletadosItems] = useState<number>(0);
@@ -165,7 +179,6 @@ export default function ContenidoViewPage() {
 
   return (
     <div className="flex flex-col md:flex-row gap-8 -mt-2">
-      {/* BARRA LATERAL IZQUIERDA UNIFICADA CON PROGRESO COMPLETO */}
       <SidebarNavegacion
         modulos={modulos}
         progresoGlobal={progresoGlobal}
@@ -205,69 +218,140 @@ export default function ContenidoViewPage() {
                 bloques.map((bloque) => {
                   const esVideo =
                     bloque.tipo_bloque === 'video' ||
-                    (bloque.url_recurso &&
-                      (bloque.url_recurso.includes('youtube') ||
-                        bloque.url_recurso.includes('vimeo') ||
-                        bloque.url_recurso.endsWith('.mp4')));
+                    Boolean(
+                      bloque.url_recurso &&
+                        (bloque.url_recurso.includes('youtube') ||
+                          bloque.url_recurso.includes('youtu.be') ||
+                          bloque.url_recurso.includes('vimeo') ||
+                          /\.(mp4|webm|ogg)(\?.*)?$/i.test(bloque.url_recurso))
+                    );
 
                   const esImagen = bloque.tipo_bloque === 'imagen';
                   const esDescarga = bloque.tipo_bloque === 'descarga';
 
-                  return (
-                    <div key={bloque.id_bloque} className="flex flex-col gap-3">
-                      {esVideo && (
-                        <div className="w-full bg-[#001E2C] aspect-video rounded-2xl overflow-hidden shadow-lg border border-[#E2E8F0]">
-                          <iframe
-                            src={bloque.url_recurso}
-                            className="w-full h-full border-0"
-                            allow="autoplay; encrypted-media"
-                            allowFullScreen
-                          />
-                        </div>
-                      )}
+                  if (esVideo) {
+                    const videoInfo = obtenerUrlEmbedVideo(bloque.url_recurso);
 
-                      {esImagen && (
-                        <div className="w-full bg-white p-2 rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden">
+                    return (
+                      <div
+                        key={bloque.id_bloque}
+                        className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden"
+                      >
+                        <div className="w-full bg-[#001E2C] aspect-video overflow-hidden">
+                          {videoInfo.esArchivoDirecto ? (
+                            <video
+                              src={videoInfo.src}
+                              controls
+                              className="w-full h-full object-contain"
+                            />
+                          ) : (
+                            <iframe
+                              src={videoInfo.src}
+                              className="w-full h-full border-0"
+                              allow="autoplay; encrypted-media"
+                              allowFullScreen
+                            />
+                          )}
+                        </div>
+
+                        {(bloque.titulo_bloque || bloque.contenido_texto) && (
+                          <div className="p-5 sm:p-6 border-t border-[#E2E8F0]/70">
+                            {bloque.titulo_bloque && (
+                              <h3 className="text-base font-bold text-[#002547]">
+                                {bloque.titulo_bloque}
+                              </h3>
+                            )}
+                            {bloque.contenido_texto && (
+                              <p className="text-sm text-[#42474F] leading-relaxed whitespace-pre-line mt-1.5">
+                                {bloque.contenido_texto}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                  if (esImagen) {
+                    return (
+                      <figure
+                        key={bloque.id_bloque}
+                        className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden"
+                      >
+                        <div className="p-3 bg-[#F8FAFC]/50">
                           <img
                             src={bloque.url_recurso}
                             alt={bloque.titulo_bloque || 'Imagen del contenido'}
-                            className="w-full h-auto max-h-[500px] object-contain rounded-xl"
+                            className="w-full h-auto max-h-[500px] object-contain rounded-xl mx-auto"
                           />
                         </div>
-                      )}
 
-                      {esDescarga && bloque.url_recurso && (
-                        <a
-                          href={bloque.url_recurso}
-                          download
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm hover:border-[#38BDF5] transition-colors"
-                        >
-                          <span className="flex items-center gap-3">
-                            <span className="material-symbols-outlined text-[#002547]">description</span>
-                            <span className="text-sm font-bold text-[#002547]">
+                        {(bloque.titulo_bloque || bloque.contenido_texto) && (
+                          <figcaption className="p-5 sm:p-6 border-t border-[#E2E8F0]/70">
+                            {bloque.titulo_bloque && (
+                              <h3 className="text-base font-bold text-[#002547]">
+                                {bloque.titulo_bloque}
+                              </h3>
+                            )}
+                            {bloque.contenido_texto && (
+                              <p className="text-sm text-[#42474F] leading-relaxed whitespace-pre-line mt-1.5">
+                                {bloque.contenido_texto}
+                              </p>
+                            )}
+                          </figcaption>
+                        )}
+                      </figure>
+                    );
+                  }
+
+                  if (esDescarga && bloque.url_recurso) {
+                    return (
+                      <a
+                        key={bloque.id_bloque}
+                        href={bloque.url_recurso}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm hover:border-[#38BDF5] transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="material-symbols-outlined text-[#002547]">description</span>
+                          <div>
+                            <span className="block text-sm font-bold text-[#002547]">
                               {bloque.titulo_bloque || 'Descargar archivo'}
                             </span>
-                          </span>
-                          <span className="material-symbols-outlined text-[#737780]">download</span>
-                        </a>
-                      )}
+                            {bloque.contenido_texto && (
+                              <span className="block text-xs text-[#42474F] mt-0.5">
+                                {bloque.contenido_texto}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="material-symbols-outlined text-[#737780]">download</span>
+                      </a>
+                    );
+                  }
 
-                      {bloque.contenido_texto && (
-                        <div className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm">
-                          {bloque.titulo_bloque && (
-                            <h3 className="text-base font-bold text-[#002547] mb-3">
-                              {bloque.titulo_bloque}
-                            </h3>
-                          )}
+                  if (bloque.titulo_bloque || bloque.contenido_texto) {
+                    return (
+                      <div
+                        key={bloque.id_bloque}
+                        className="bg-white p-6 rounded-2xl border border-[#E2E8F0] shadow-sm"
+                      >
+                        {bloque.titulo_bloque && (
+                          <h3 className="text-base font-bold text-[#002547] mb-3">
+                            {bloque.titulo_bloque}
+                          </h3>
+                        )}
+                        {bloque.contenido_texto && (
                           <div className="text-sm text-[#42474F] leading-relaxed whitespace-pre-line">
                             {bloque.contenido_texto}
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  );
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return null;
                 })
               )}
             </div>
@@ -315,7 +399,6 @@ export default function ContenidoViewPage() {
 
         <ConsultaContenido idContenido={Number(idContenido)} />
 
-        {/* NAVEGACIÓN INFERIOR */}
         <footer className="mt-8 pt-6 border-t border-[#E2E8F0] flex items-center justify-between gap-4">
           {navAnterior && !navAnterior.bloqueado ? (
             <Link

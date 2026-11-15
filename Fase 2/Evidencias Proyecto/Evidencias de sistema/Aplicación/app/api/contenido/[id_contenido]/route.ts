@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { obtenerSesionActual } from '@/lib/auth';
-import { obtenerProgresoUsuario, obtenerEstructuraConBloqueos } from '@/lib/progreso';
+import {
+  obtenerProgresoUsuario,
+  obtenerEstructuraConBloqueos,
+  verificarPlanProUsuario,
+} from '@/lib/progreso';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
@@ -117,6 +123,7 @@ export async function GET(
       formulario = null;
     }
 
+    const tienePlanPro = await verificarPlanProUsuario(sesion.id_usuario);
     const modulosEstructurados = await obtenerEstructuraConBloqueos(sesion.id_usuario);
 
     const itemsOrdenadosGlobal: any[] = [];
@@ -138,7 +145,8 @@ export async function GET(
       contenido,
       bloques,
       recursos,
-      formulario, 
+      formulario,
+      tienePlanPro,
       modulos: modulosEstructurados,
       navegacion: {
         anterior: itemAnterior
