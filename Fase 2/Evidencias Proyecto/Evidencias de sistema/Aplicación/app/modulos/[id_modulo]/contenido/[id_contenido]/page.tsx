@@ -66,6 +66,7 @@ export default function ContenidoViewPage() {
 
   const [detalle, setDetalle] = useState<DetalleContenido | null>(null);
   const [modulos, setModulos] = useState<ModuloSidebar[]>([]);
+  const [tienePlanPro, setTienePlanPro] = useState<boolean>(false);
   const [bloques, setBloques] = useState<Bloque[]>([]);
   const [recursos, setRecursos] = useState<Recurso[]>([]);
   const [navAnterior, setNavAnterior] = useState<ItemNav | null>(null);
@@ -86,7 +87,7 @@ export default function ContenidoViewPage() {
       }
 
       try {
-        const res = await fetch(`/api/contenido/${idContenido}`);
+        const res = await fetch(`/api/contenido/${idContenido}`, { cache: 'no-store' });
         const data = await res.json();
 
         if (!res.ok) {
@@ -95,6 +96,7 @@ export default function ContenidoViewPage() {
         }
 
         setDetalle(data.contenido);
+        setTienePlanPro(Boolean(data.tienePlanPro));
         setModulos(data.modulos || []);
         setBloques(data.bloques || []);
         setRecursos(data.recursos || []);
@@ -186,6 +188,7 @@ export default function ContenidoViewPage() {
         completadosItems={completadosItems}
         idActivo={detalle.id_contenido}
         tipoActivo="contenido"
+        tienePlanPro={tienePlanPro}
       />
 
       <main className="flex-1 flex flex-col gap-6">
@@ -228,6 +231,7 @@ export default function ContenidoViewPage() {
 
                   const esImagen = bloque.tipo_bloque === 'imagen';
                   const esDescarga = bloque.tipo_bloque === 'descarga';
+                  const esUrl = bloque.tipo_bloque === 'url';
 
                   if (esVideo) {
                     const videoInfo = obtenerUrlEmbedVideo(bloque.url_recurso);
@@ -237,6 +241,21 @@ export default function ContenidoViewPage() {
                         key={bloque.id_bloque}
                         className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden"
                       >
+                        {(bloque.titulo_bloque || bloque.contenido_texto) && (
+                          <div className="p-5 sm:p-6 border-b border-[#E2E8F0]/70">
+                            {bloque.titulo_bloque && (
+                              <h3 className="text-base font-bold text-[#002547]">
+                                {bloque.titulo_bloque}
+                              </h3>
+                            )}
+                            {bloque.contenido_texto && (
+                              <p className="text-sm text-[#42474F] leading-relaxed whitespace-pre-line mt-1.5">
+                                {bloque.contenido_texto}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
                         <div className="w-full bg-[#001E2C] aspect-video overflow-hidden">
                           {videoInfo.esArchivoDirecto ? (
                             <video
@@ -253,40 +272,18 @@ export default function ContenidoViewPage() {
                             />
                           )}
                         </div>
-
-                        {(bloque.titulo_bloque || bloque.contenido_texto) && (
-                          <div className="p-5 sm:p-6 border-t border-[#E2E8F0]/70">
-                            {bloque.titulo_bloque && (
-                              <h3 className="text-base font-bold text-[#002547]">
-                                {bloque.titulo_bloque}
-                              </h3>
-                            )}
-                            {bloque.contenido_texto && (
-                              <p className="text-sm text-[#42474F] leading-relaxed whitespace-pre-line mt-1.5">
-                                {bloque.contenido_texto}
-                              </p>
-                            )}
-                          </div>
-                        )}
                       </div>
                     );
                   }
+
                   if (esImagen) {
                     return (
                       <figure
                         key={bloque.id_bloque}
                         className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden"
                       >
-                        <div className="p-3 bg-[#F8FAFC]/50">
-                          <img
-                            src={bloque.url_recurso}
-                            alt={bloque.titulo_bloque || 'Imagen del contenido'}
-                            className="w-full h-auto max-h-[500px] object-contain rounded-xl mx-auto"
-                          />
-                        </div>
-
                         {(bloque.titulo_bloque || bloque.contenido_texto) && (
-                          <figcaption className="p-5 sm:p-6 border-t border-[#E2E8F0]/70">
+                          <figcaption className="p-5 sm:p-6 border-b border-[#E2E8F0]/70">
                             {bloque.titulo_bloque && (
                               <h3 className="text-base font-bold text-[#002547]">
                                 {bloque.titulo_bloque}
@@ -299,25 +296,35 @@ export default function ContenidoViewPage() {
                             )}
                           </figcaption>
                         )}
+
+                        <div className="p-4 bg-[#F8FAFC]/50">
+                          <img
+                            src={bloque.url_recurso}
+                            alt={bloque.titulo_bloque || 'Imagen del contenido'}
+                            className="w-full h-auto max-h-[500px] object-contain rounded-xl mx-auto"
+                          />
+                        </div>
                       </figure>
                     );
                   }
 
-                  if (esDescarga && bloque.url_recurso) {
+                  if ((esDescarga || esUrl) && bloque.url_recurso) {
                     return (
                       <a
                         key={bloque.id_bloque}
                         href={bloque.url_recurso}
-                        download
+                        {...(esDescarga ? { download: true } : {})}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm hover:border-[#38BDF5] transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <span className="material-symbols-outlined text-[#002547]">description</span>
+                          <span className="material-symbols-outlined text-[#002547]">
+                            {esUrl ? 'open_in_new' : 'description'}
+                          </span>
                           <div>
                             <span className="block text-sm font-bold text-[#002547]">
-                              {bloque.titulo_bloque || 'Descargar archivo'}
+                              {bloque.titulo_bloque || (esUrl ? 'Abrir enlace' : 'Descargar archivo')}
                             </span>
                             {bloque.contenido_texto && (
                               <span className="block text-xs text-[#42474F] mt-0.5">
@@ -326,7 +333,9 @@ export default function ContenidoViewPage() {
                             )}
                           </div>
                         </div>
-                        <span className="material-symbols-outlined text-[#737780]">download</span>
+                        <span className="material-symbols-outlined text-[#737780]">
+                          {esUrl ? 'arrow_outward' : 'download'}
+                        </span>
                       </a>
                     );
                   }

@@ -236,6 +236,7 @@ export async function obtenerEstructuraConBloqueos(usuarioId: number) {
       titulo: m.titulo,
       posicion: Number(m.posicion),
       es_gratuito: esGratuito,
+      tienePlanPro,
       bloqueado: !tieneAccesoAlModulo || (totalItems > 0 && itemsConBloqueo[0].bloqueado),
       totalItems,
       completadosItems,
