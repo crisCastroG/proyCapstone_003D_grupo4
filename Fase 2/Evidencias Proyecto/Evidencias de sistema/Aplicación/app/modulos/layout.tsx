@@ -48,12 +48,6 @@ export default async function ModulosLayout({ children }: { children: ReactNode 
           </nav>
 
           <div className="flex items-center gap-3">
-            <button aria-label="Notificaciones" className="p-2 text-[#42474f] hover:bg-[#f1f4f6] rounded-full transition-colors">
-              <span className="material-symbols-outlined text-xl">notifications</span>
-            </button>
-            <button aria-label="Ajustes" className="p-2 text-[#42474f] hover:bg-[#f1f4f6] rounded-full transition-colors">
-              <span className="material-symbols-outlined text-xl">settings</span>
-            </button>
             <Link
               href="/modulos/cuenta"
               aria-label="Mi cuenta"
