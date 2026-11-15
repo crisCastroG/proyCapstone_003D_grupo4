@@ -3,11 +3,33 @@ import { query } from '@/lib/db';
 import { obtenerSesionActual } from '@/lib/auth';
 import { obtenerProgresoUsuario } from '@/lib/progreso';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const sesion = await obtenerSesionActual();
     if (!sesion) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    // Verificar si el usuario tiene un Plan Pro activo y vigente
+    let tienePlanPro = false;
+    try {
+      const resPlan = await query(
+        `SELECT 1
+         FROM public.plan_usuario pu
+         INNER JOIN public.plan p ON p.id_plan = pu.plan_id_plan
+         LEFT JOIN public.pago pg ON pg.id_pago = pu.pago_id_pago
+         WHERE pu.usuario_id_usuario = $1
+           AND p.costo_plan > 0
+           AND (pu.fecha_termino IS NULL OR pu.fecha_termino > NOW())
+           AND (pu.pago_id_pago IS NULL OR LOWER(COALESCE(pg.estado_pago::text, 'aprobado')) = 'aprobado')
+         LIMIT 1;`,
+        [sesion.id_usuario]
+      );
+      tienePlanPro = resPlan.rows.length > 0;
+    } catch (e) {
+      console.warn('No se pudo verificar el plan del usuario:', e);
     }
 
     let resModulos: { rows: any[] } = { rows: [] };
@@ -23,7 +45,7 @@ export async function GET() {
       );
     }
 
-    // Obtener contenidos 
+    // Obtener contenidos
     const resContenidos = await query(
       `SELECT id_contenido, titulo_contenido AS titulo, descripcion_contenido AS descripcion, 
               orden_contenido AS orden, duracion_estimada AS duracion, modulo_id_modulo
@@ -32,7 +54,7 @@ export async function GET() {
        ORDER BY orden_contenido ASC;`
     );
 
-    // Obtener evaluaciones 
+    // Obtener evaluaciones
     let resEvaluaciones: { rows: any[] } = { rows: [] };
     try {
       resEvaluaciones = await query(
@@ -68,10 +90,12 @@ export async function GET() {
       resEvalComp.rows.forEach((r: any) => evalAprobadasIds.add(Number(r.evaluacion_id_evaluacion)));
     } catch (e) {}
 
-    let precedenteCompletado = true; 
+    let precedenteCompletado = true;
 
     const modulosFormateados = resModulos.rows.map((m) => {
       const esGratuito = m.es_gratuito !== undefined ? Boolean(m.es_gratuito) : true;
+      // El usuario tiene acceso si el módulo es gratuito O si posee un Plan Pro activo
+      const tieneAccesoAlModulo = esGratuito || tienePlanPro;
 
       const lecciones = resContenidos.rows
         .filter((c) => Number(c.modulo_id_modulo) === Number(m.id_modulo))
@@ -102,7 +126,7 @@ export async function GET() {
       itemsUnificados.forEach((item) => {
         let bloqueado = false;
 
-        if (!esGratuito) {
+        if (!tieneAccesoAlModulo) {
           bloqueado = true;
         } else {
           bloqueado = !precedenteCompletado;
@@ -129,14 +153,13 @@ export async function GET() {
       });
 
       const totalItems = itemsUnificados.length;
-      
-      // Un módulo se considera bloqueado si es de pago o si su primer ítem está bloqueado
-      const primerItemBloqueado = totalItems > 0 
+
+      const primerItemBloqueado = totalItems > 0
         ? (contenidosProcesados.find((c) => c.id_contenido === itemsUnificados[0].id) ||
            evaluacionesProcesadas.find((e) => e.id_evaluacion === itemsUnificados[0].id))?.bloqueado
-        : !esGratuito;
+        : !tieneAccesoAlModulo;
 
-      const moduloBloqueado = !esGratuito || Boolean(primerItemBloqueado);
+      const moduloBloqueado = !tieneAccesoAlModulo || Boolean(primerItemBloqueado);
       const estadoModulo = completadosCount === totalItems && totalItems > 0 ? 'completado' : 'en_curso';
 
       return {
