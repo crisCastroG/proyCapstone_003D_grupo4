@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 export default function AvatarIniciales() {
-  const [iniciales, setIniciales] = useState<string>('U');
+  const [iniciales, setIniciales] = useState<string>('...');
 
   useEffect(() => {
     async function cargarIniciales() {

@@ -85,7 +85,7 @@ export default function ModuloWorkspace() {
   useEffect(() => {
     async function cargarModulosBD() {
       try {
-        const res = await fetch('/api/modulos');
+        const res = await fetch('/api/modulos', { cache: 'no-store' });
         const data = await res.json();
 
         if (!res.ok) {
@@ -121,8 +121,8 @@ export default function ModuloWorkspace() {
     cargarModulosBD();
   }, []);
 
-  const handleModuloClick = (id_modulo: number, estaBloqueado?: boolean) => {
-    if (estaBloqueado) {
+  const handleModuloClick = (id_modulo: number, requierePlan: boolean) => {
+    if (requierePlan) {
       router.push('/planes');
       return;
     }
@@ -186,7 +186,8 @@ export default function ModuloWorkspace() {
                 const estaDesplegado = Boolean(modulosAbiertos[modulo.id_modulo]);
                 const esCompletado = modulo.estado === 'completado';
                 const estaBloqueado = Boolean(modulo.bloqueado);
-                const esPremium = !tienePlanPro && modulo.es_gratuito === false;
+                const requierePlan = !tienePlanPro && modulo.es_gratuito === false;
+                const esPremium = requierePlan;
 
                 const leccionesMapeadas: ItemModuloUnificado[] = (modulo.contenidos || []).map((c) => ({
                   tipo: 'leccion',
@@ -226,8 +227,9 @@ export default function ModuloWorkspace() {
                           : 'border-l-4 border-l-[#002547] border-t border-r border-b border-[#E6F2FB]'
                     }`}
                   >
+                    {/* Cabecera Módulo */}
                     <div
-                      onClick={() => handleModuloClick(modulo.id_modulo, estaBloqueado)}
+                      onClick={() => handleModuloClick(modulo.id_modulo, requierePlan)}
                       className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 select-none cursor-pointer hover:bg-slate-100/60 transition-colors"
                     >
                       <div className="flex items-start sm:items-center gap-4 flex-grow">
@@ -283,7 +285,7 @@ export default function ModuloWorkspace() {
                           </span>
                         )}
 
-                        {!estaBloqueado && (
+                        {!requierePlan && (
                           <button
                             type="button"
                             aria-label="Desplegar contenido"
@@ -297,7 +299,7 @@ export default function ModuloWorkspace() {
                       </div>
                     </div>
 
-                    {estaDesplegado && !estaBloqueado && (
+                    {estaDesplegado && !requierePlan && (
                       <div className="border-t border-[#E6F2FB] bg-[#F8FAFC] p-4 sm:p-6 flex flex-col gap-3">
                         <h4 className="text-xs font-bold uppercase tracking-wider text-[#006689] mb-1">
                           CONTENIDOS DEL MÓDULO
@@ -361,12 +363,20 @@ export default function ModuloWorkspace() {
                                   </div>
 
                                   {contenidoBloqueado ? (
-                                    <button
-                                      onClick={() => router.push('/planes')}
-                                      className="px-3 py-1.5 bg-amber-50 border border-amber-300/80 text-amber-700 font-bold text-xs rounded-md hover:bg-amber-100 transition-colors whitespace-nowrap"
-                                    >
-                                      Obtener Plan
-                                    </button>
+                                    requierePlan ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => router.push('/planes')}
+                                        className="px-3 py-1.5 bg-amber-50 border border-amber-300/80 text-amber-700 font-bold text-xs rounded-md hover:bg-amber-100 transition-colors whitespace-nowrap"
+                                      >
+                                        Obtener Plan
+                                      </button>
+                                    ) : (
+                                      <span className="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-500 font-semibold text-xs rounded-md flex items-center gap-1.5 whitespace-nowrap cursor-not-allowed select-none">
+                                        <span className="material-symbols-outlined text-sm">lock</span>
+                                        Completa lección anterior
+                                      </span>
+                                    )
                                   ) : (
                                     <Link
                                       href={`/modulos/${modulo.id_modulo}/contenido/${item.id}`}
@@ -423,12 +433,20 @@ export default function ModuloWorkspace() {
                                 </div>
 
                                 {evaluacionBloqueada ? (
-                                  <button
-                                    onClick={() => router.push('/planes')}
-                                    className="px-3 py-1.5 bg-amber-50 border border-amber-300/80 text-amber-700 font-bold text-xs rounded-md hover:bg-amber-100 transition-colors whitespace-nowrap"
-                                  >
-                                    Obtener Plan
-                                  </button>
+                                  requierePlan ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => router.push('/planes')}
+                                      className="px-3 py-1.5 bg-amber-50 border border-amber-300/80 text-amber-700 font-bold text-xs rounded-md hover:bg-amber-100 transition-colors whitespace-nowrap"
+                                    >
+                                      Obtener Plan
+                                    </button>
+                                  ) : (
+                                    <span className="px-3 py-1.5 bg-slate-100 border border-slate-200 text-slate-500 font-semibold text-xs rounded-md flex items-center gap-1.5 whitespace-nowrap cursor-not-allowed select-none">
+                                      <span className="material-symbols-outlined text-sm">lock</span>
+                                      Completa lección anterior
+                                    </span>
+                                  )
                                 ) : (
                                   <Link
                                     href={`/modulos/evaluaciones/${item.id}`}

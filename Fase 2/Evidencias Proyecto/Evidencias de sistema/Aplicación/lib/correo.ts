@@ -1,13 +1,43 @@
 import nodemailer from 'nodemailer';
 
-
-
 export type ResultadoCorreo = { enviado: boolean; simulado: boolean };
+
+function generarHtmlDesdeTexto(texto: string): string {
+  const escapado = texto
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  const conEnlaces = escapado.replace(
+    /(https?:\/\/[^\s]+)/g,
+    '<a href="$1" style="color: #002547; text-decoration: underline;">$1</a>'
+  );
+
+  const parrafos = conEnlaces
+    .split(/\n{2,}/)
+    .map((p) => `<p style="margin: 0 0 14px 0;">${p.replace(/\n/g, '<br />')}</p>`)
+    .join('');
+
+  return `
+    <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="border-bottom: 2px solid #002547; padding-bottom: 12px; margin-bottom: 20px;">
+        <strong style="font-size: 18px; color: #002547;">Empleamás</strong>
+      </div>
+      <div>
+        ${parrafos}
+      </div>
+      <div style="margin-top: 24px; padding-top: 12px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
+        Este es un mensaje enviado desde la plataforma Empleamás.
+      </div>
+    </div>
+  `.trim();
+}
 
 export async function enviarCorreo(opts: {
   para: string;
   asunto: string;
   texto: string;
+  html?: string;
   responderA?: string;
 }): Promise<ResultadoCorreo> {
   const host = process.env.SMTP_HOST;
@@ -20,19 +50,31 @@ export async function enviarCorreo(opts: {
     return { enviado: false, simulado: true };
   }
 
+  const port = Number(process.env.SMTP_PORT || 587);
+  const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+
   const transporter = nodemailer.createTransport({
     host,
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
+    port,
+    secure,
+    auth: process.env.SMTP_USER
+      ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+      : undefined,
   });
 
+  const correoRemitente = (process.env.SMTP_FROM || process.env.SMTP_USER || '').trim();
+  const fromFormateado = correoRemitente.includes('<')
+    ? correoRemitente
+    : `"Empleamás" <${correoRemitente}>`;
+
   await transporter.sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    from: fromFormateado,
     to: opts.para,
     subject: opts.asunto,
     text: opts.texto,
+    html: opts.html || generarHtmlDesdeTexto(opts.texto),
     replyTo: opts.responderA,
   });
+
   return { enviado: true, simulado: false };
 }

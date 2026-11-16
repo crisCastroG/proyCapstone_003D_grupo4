@@ -10,9 +10,9 @@ Los usuarios avanzan a través de módulos multimedia y evaluaciones con exigenc
 
 | Nombre Completo | Rol en el Proyecto |
 | :--- | :--- |
-| `Cristian Castro` | Arquitectura Full-Stack & Base de Datos |
-| `Tomás Leon` |  Desarrollo Frontend & UX/UI |
-| `Hector Nahuelpan` | Integraciones, QA & Despliegue |
+| `Cristian Castro` | Scrum Master - QA y desarrollo de BD |
+| `Tomás Leon` |  Dev Full-Stack |
+| `Hector Nahuelpan` | Dev Full-Stack |
 
 ## Funciones Principales
 

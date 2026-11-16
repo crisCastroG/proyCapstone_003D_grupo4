@@ -4,7 +4,7 @@ import { obtenerSesionActual } from '@/lib/auth';
 
 const MAX_POR_HORA = 5;
 
-// Un usuario envía una consulta sobre una lección. Queda guardada para los administradores.
+// Un usuario envía una consulta sobre una lección al administrador asignado a su formulario.
 export async function POST(request: Request) {
   try {
     const sesion = await obtenerSesionActual();
@@ -45,24 +45,49 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Enviaste muchas consultas. Inténtalo más tarde.' }, { status: 429 });
     }
 
-    // La tabla exige un destinatario: se asigna el primer administrador activo.
-    // La bandeja de administración muestra todos los mensajes, así que cualquier admin puede responder.
-    const admin = await query(
-      `SELECT u.id_usuario
-         FROM public.usuario u
-         JOIN public.rol_usuario r ON r.id_rol = u.rol_usuario_id_rol
-        WHERE r.nombre_rol IN ('administrador', 'superadministrador') AND u.estado_usuario = 'activo'
-        ORDER BY u.id_usuario ASC LIMIT 1`
+    // Buscar el formulario de la lección y el administrador asignado a él
+    const resFormulario = await query(
+      `SELECT f.id_formulario, f.usuario_id_admin, u.estado_usuario
+         FROM public.formulario_leccion f
+         LEFT JOIN public.usuario u ON u.id_usuario = f.usuario_id_admin
+        WHERE f.contenido_id_contenido = $1
+        LIMIT 1`,
+      [contenidoId]
     );
-    if (admin.rows.length === 0) {
-      return NextResponse.json({ error: 'No hay un administrador disponible en este momento.' }, { status: 503 });
+
+    if (resFormulario.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Esta lección no tiene un formulario de consulta habilitado.' },
+        { status: 404 }
+      );
+    }
+
+    const formulario = resFormulario.rows[0];
+    let destinatarioId: number | null =
+      formulario.usuario_id_admin && formulario.estado_usuario === 'activo'
+        ? Number(formulario.usuario_id_admin)
+        : null;
+
+    // Si el admin asignado ya no existe o está inactivo, usar un admin activo
+    if (!destinatarioId) {
+      const adminRespaldo = await query(
+        `SELECT u.id_usuario
+           FROM public.usuario u
+           JOIN public.rol_usuario r ON r.id_rol = u.rol_usuario_id_rol
+          WHERE r.nombre_rol IN ('administrador', 'superadministrador') AND u.estado_usuario = 'activo'
+          ORDER BY u.id_usuario ASC LIMIT 1`
+      );
+      if (adminRespaldo.rows.length === 0) {
+        return NextResponse.json({ error: 'No hay un administrador disponible en este momento.' }, { status: 503 });
+      }
+      destinatarioId = Number(adminRespaldo.rows[0].id_usuario);
     }
 
     await query(
       `INSERT INTO public.mensaje_contacto
          (asunto, mensaje, contenido_id_contenido, usuario_id_remitente, usuario_id_destinatario)
        VALUES ($1, $2, $3, $4, $5)`,
-      [asunto || null, mensaje, contenidoId, sesion.id_usuario, admin.rows[0].id_usuario]
+      [asunto || null, mensaje, contenidoId, sesion.id_usuario, destinatarioId]
     );
 
     return NextResponse.json({ mensaje: 'Consulta enviada. Te responderemos a tu correo.' }, { status: 201 });

@@ -33,6 +33,13 @@ interface Recurso {
   es_descargable: boolean;
 }
 
+interface FormularioLeccion {
+  id_formulario: number;
+  titulo_formulario?: string;
+  descripcion_formulario?: string;
+  usuario_id_admin: number;
+}
+
 interface DetalleContenido {
   id_contenido: number;
   titulo: string;
@@ -69,6 +76,7 @@ export default function ContenidoViewPage() {
   const [tienePlanPro, setTienePlanPro] = useState<boolean>(false);
   const [bloques, setBloques] = useState<Bloque[]>([]);
   const [recursos, setRecursos] = useState<Recurso[]>([]);
+  const [formulario, setFormulario] = useState<FormularioLeccion | null>(null);
   const [navAnterior, setNavAnterior] = useState<ItemNav | null>(null);
   const [navSiguiente, setNavSiguiente] = useState<ItemNav | null>(null);
 
@@ -100,6 +108,7 @@ export default function ContenidoViewPage() {
         setModulos(data.modulos || []);
         setBloques(data.bloques || []);
         setRecursos(data.recursos || []);
+        setFormulario(data.formulario || null);
         setNavAnterior(data.navegacion?.anterior || null);
         setNavSiguiente(data.navegacion?.siguiente || null);
 
@@ -310,33 +319,40 @@ export default function ContenidoViewPage() {
 
                   if ((esDescarga || esUrl) && bloque.url_recurso) {
                     return (
-                      <a
+                      <div
                         key={bloque.id_bloque}
-                        href={bloque.url_recurso}
-                        {...(esDescarga ? { download: true } : {})}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between gap-3 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm hover:border-[#38BDF5] transition-colors"
+                        className="bg-white rounded-2xl border border-[#E2E8F0] shadow-sm overflow-hidden"
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="material-symbols-outlined text-[#002547]">
-                            {esUrl ? 'open_in_new' : 'description'}
-                          </span>
-                          <div>
-                            <span className="block text-sm font-bold text-[#002547]">
-                              {bloque.titulo_bloque || (esUrl ? 'Abrir enlace' : 'Descargar archivo')}
-                            </span>
+                        {(bloque.titulo_bloque || bloque.contenido_texto) && (
+                          <div className="p-5 sm:p-6 border-b border-[#E2E8F0]/70">
+                            {bloque.titulo_bloque && (
+                              <h3 className="text-base font-bold text-[#002547]">
+                                {bloque.titulo_bloque}
+                              </h3>
+                            )}
                             {bloque.contenido_texto && (
-                              <span className="block text-xs text-[#42474F] mt-0.5">
+                              <p className="text-sm text-[#42474F] leading-relaxed whitespace-pre-line mt-1.5">
                                 {bloque.contenido_texto}
-                              </span>
+                              </p>
                             )}
                           </div>
+                        )}
+
+                        <div className="p-4 bg-[#F8FAFC]/50 flex justify-start">
+                          <a
+                            href={bloque.url_recurso}
+                            {...(esDescarga ? { download: true } : {})}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#002547] text-white text-xs font-bold rounded-xl hover:bg-[#2566A8] transition-colors shadow-xs"
+                          >
+                            <span className="material-symbols-outlined text-base">
+                              {esUrl ? 'open_in_new' : 'download'}
+                            </span>
+                            {esUrl ? 'Abrir enlace externo' : 'Descargar recurso'}
+                          </a>
                         </div>
-                        <span className="material-symbols-outlined text-[#737780]">
-                          {esUrl ? 'arrow_outward' : 'download'}
-                        </span>
-                      </a>
+                      </div>
                     );
                   }
 
@@ -406,7 +422,7 @@ export default function ContenidoViewPage() {
           )}
         </div>
 
-        <ConsultaContenido idContenido={Number(idContenido)} />
+        {formulario && <ConsultaContenido idContenido={Number(idContenido)} />}
 
         <footer className="mt-8 pt-6 border-t border-[#E2E8F0] flex items-center justify-between gap-4">
           {navAnterior && !navAnterior.bloqueado ? (

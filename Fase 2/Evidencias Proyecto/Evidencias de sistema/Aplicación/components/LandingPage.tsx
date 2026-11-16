@@ -70,7 +70,7 @@ export default function LandingPage() {
             <a href="#historias">Historias</a>
           </div>
           <Link className={styles.loginLink} href="/inicio_sesion">
-            Iniciar sesión <span aria-hidden="true">↗</span>
+            Accede a la plataforma <span aria-hidden="true">↗</span>
           </Link>
         </nav>
       </header>
@@ -228,10 +228,7 @@ export default function LandingPage() {
             emplea<span>más</span>
           </Link>
           <p>© 2026 Empleamás. Asesorías laborales que impulsan tu futuro.</p>
-          <nav aria-label="Enlaces legales">
-            <a href="mailto:hola@empleamas.com">Contacto</a>
-            <a href="mailto:soporte@empleamas.com">Soporte</a>
-          </nav>
+
         </div>
       </footer>
     </div>
